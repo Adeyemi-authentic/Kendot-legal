@@ -1,0 +1,31 @@
+Privacy Notice
+
+How Kendot Legal collects, uses and protects personal data, including data sent through the website assistant and enquiry form.
+
+This notice was written for a fictional firm to demonstrate privacy practices under the Nigeria Data Protection Act 2023. It is not a real firm's privacy notice.
+
+Who we are
+
+Kendot Legal is the data controller for personal data collected through this website.
+
+What we collect
+
+Enquiry form: your name, email address or phone number, the type of matter, a short description you choose to provide, and the page of the website you sent it from. We collect this only after you give your consent by ticking the consent box.
+
+Assistant questions: the questions you type into the website assistant, so that we can answer them and improve the assistant. Please do not include sensitive personal details in your questions.
+
+Why we use it
+
+We use enquiry data only to respond to your enquiry, run conflict checks and arrange a consultation. The lawful basis for processing is your consent, and later the steps needed to enter into a contract with you, as the Nigeria Data Protection Act 2023 permits.
+
+How long we keep it
+
+Enquiries that do not become client matters are deleted after 12 months. Records for client matters are kept for as long as the law and our professional obligations require.
+
+Your rights
+
+Under the Nigeria Data Protection Act 2023, you have the right to be told what data we hold about you, to receive a copy of it, to have it corrected or deleted, to withdraw your consent at any time, and to complain to the Nigeria Data Protection Commission. To exercise any of these rights, email hello@kendotlegal.example.
+
+AI assistant
+
+The website assistant uses a third-party AI model to write its answers from content published on this site. The questions you type are sent to that provider to generate an answer, and the provider does not use them to train its models. The assistant does not have access to any client files.

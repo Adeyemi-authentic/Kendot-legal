@@ -1,0 +1,17 @@
+# Secrets -- never commit
+.env
+**/.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+api/rag/index_data/
+eval/cache.json
+api/rag/leads.sqlite
+
+# Node / Astro
+node_modules/
+web/dist/
+web/.astro/
+eval/results/latest.json

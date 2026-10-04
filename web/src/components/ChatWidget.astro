@@ -1,0 +1,488 @@
+---
+// The website assistant: a chat bubble on every page.
+// Talks to the FastAPI service (api/) over fetch + Server-Sent Events.
+// Set PUBLIC_ASSISTANT_API to the deployed API URL; it defaults to the local dev server.
+import { getCollection } from 'astro:content';
+import { SITE } from '../site';
+
+const practice = (await getCollection('practice')).sort((a, b) => a.data.order - b.data.order);
+// Page URL -> practice area, so the enquiry form can pre-select the matter type
+// from whichever page the last answer cited.
+const pagePractice = Object.fromEntries([
+  ...practice.map((p) => [`/practice/${p.id}/`, p.id]),
+  ...(await getCollection('insights')).map((i) => [`/insights/${i.id}/`, i.data.practice]),
+]);
+const matters = [...practice.map((p) => ({ id: p.id, label: p.data.title })), { id: 'other', label: 'Something else' }];
+const apiBase = import.meta.env.PUBLIC_ASSISTANT_API ?? 'http://localhost:8000';
+const starters = [
+  'How much notice must a landlord give a yearly tenant?',
+  'How much does a consultation cost?',
+  'Can a company in Nigeria have one shareholder?',
+];
+---
+
+<div id="kl-chat" data-api={apiBase} data-practice={JSON.stringify(pagePractice)}>
+  <button
+    id="kl-launcher"
+    type="button"
+    class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex items-center gap-2 rounded-full bg-ink text-paper pl-4 pr-5 py-3 shadow-lg shadow-ink/20 hover:bg-ink-soft transition-colors"
+    aria-expanded="false"
+    aria-controls="kl-panel"
+  >
+    <svg class="size-5 text-brass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5h16v11H8l-4 4V5z" stroke-linejoin="round"/></svg>
+    <span class="text-sm font-medium">Ask a question</span>
+  </button>
+
+  <section
+    id="kl-panel"
+    role="dialog"
+    aria-modal="false"
+    aria-labelledby="kl-title"
+    hidden
+    class="fixed z-50 inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[400px] sm:h-[min(640px,calc(100vh-3rem))] flex flex-col bg-paper sm:rounded-md sm:border sm:border-line shadow-2xl shadow-ink/25"
+  >
+    <header class="flex items-start justify-between gap-3 bg-ink text-paper px-4 py-3 sm:rounded-t-md">
+      <div>
+        <p id="kl-title" class="font-serif text-lg font-semibold leading-tight">{SITE.name} assistant</p>
+        <p class="text-xs text-paper/70 mt-0.5">Answers from this website. General information, not legal advice.</p>
+      </div>
+      <div class="flex items-center gap-1 -mr-1">
+        <button id="kl-reset" type="button" class="p-2 text-paper/70 hover:text-paper" aria-label="Start a new conversation" title="New conversation">
+          <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button id="kl-close" type="button" class="p-2 text-paper/70 hover:text-paper" aria-label="Close assistant">
+          <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div id="kl-log" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 text-[15px]" aria-live="polite" aria-relevant="additions">
+      <div id="kl-welcome" class="space-y-3">
+        <p class="rounded-md bg-white border border-line px-3.5 py-2.5 text-ink-soft leading-relaxed">
+          Hello. I answer general questions using the articles and pages on this website, and I link to where each answer comes from. I can't give advice on your own situation, but I can put you in touch with a lawyer.
+        </p>
+        <p class="text-xs text-muted">Please don't share sensitive personal details here. See our <a href="/privacy/" class="underline underline-offset-2">privacy notice</a>.</p>
+        <div class="flex flex-col items-start gap-2 pt-1">
+          {starters.map((q) => (
+            <button type="button" data-starter class="text-left text-sm rounded-full border border-line bg-white px-3.5 py-1.5 hover:border-brass transition-colors">{q}</button>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <form id="kl-form" class="border-t border-line bg-white p-3 sm:rounded-b-md" autocomplete="off">
+      <label for="kl-input" class="sr-only">Your question</label>
+      <div class="flex items-end gap-2">
+        <textarea
+          id="kl-input"
+          rows="1"
+          maxlength="500"
+          placeholder="Type your question"
+          class="flex-1 resize-none rounded-sm border border-line bg-paper px-3 py-2.5 text-base leading-snug max-h-32 focus:outline-none focus:border-brass"
+        ></textarea>
+        <button id="kl-send" type="submit" class="shrink-0 rounded-sm bg-ink text-paper px-4 py-2.5 text-sm font-medium hover:bg-ink-soft disabled:opacity-50 transition-colors">Send</button>
+      </div>
+      <p id="kl-count" class="mt-1.5 text-[11px] text-muted text-right" aria-live="off">0 / 500</p>
+    </form>
+  </section>
+
+  <template id="kl-intake-tpl">
+    <form class="kl-intake rounded-md border border-brass/60 bg-white p-4 space-y-3 text-sm" novalidate>
+      <p class="font-serif text-base font-semibold">Send an enquiry to a lawyer</p>
+      <p class="text-xs text-muted leading-relaxed">A lawyer from the right team will reply within one working day. Please give a short summary only.</p>
+      <div>
+        <label class="block text-xs font-medium mb-1" for="kl-i-name">Your name</label>
+        <input id="kl-i-name" name="name" required maxlength="100" autocomplete="name" class="w-full rounded-sm border border-line bg-paper px-3 py-2 text-base focus:outline-none focus:border-brass" />
+      </div>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <label class="block text-xs font-medium mb-1" for="kl-i-email">Email</label>
+          <input id="kl-i-email" name="email" type="email" maxlength="200" autocomplete="email" class="w-full rounded-sm border border-line bg-paper px-3 py-2 text-base focus:outline-none focus:border-brass" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1" for="kl-i-phone">Phone or WhatsApp</label>
+          <input id="kl-i-phone" name="phone" type="tel" maxlength="30" autocomplete="tel" class="w-full rounded-sm border border-line bg-paper px-3 py-2 text-base focus:outline-none focus:border-brass" />
+        </div>
+      </div>
+      <p class="text-[11px] text-muted -mt-1">Give an email address, a phone number, or both.</p>
+      <div>
+        <label class="block text-xs font-medium mb-1" for="kl-i-matter">Type of matter</label>
+        <select id="kl-i-matter" name="matter_type" required class="w-full rounded-sm border border-line bg-paper px-3 py-2 text-base focus:outline-none focus:border-brass">
+          <option value="" selected disabled>Choose one</option>
+          {matters.map((m) => <option value={m.id}>{m.label}</option>)}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium mb-1" for="kl-i-desc">Brief description</label>
+        <textarea id="kl-i-desc" name="description" rows="3" required minlength="10" maxlength="2000" class="w-full rounded-sm border border-line bg-paper px-3 py-2 text-base focus:outline-none focus:border-brass"></textarea>
+      </div>
+      <!-- Honeypot: hidden from people and screen readers; bots fill it in. -->
+      <div class="hidden" aria-hidden="true">
+        <label>Website <input name="website" tabindex="-1" autocomplete="off" /></label>
+      </div>
+      <label class="flex items-start gap-2.5 text-xs leading-relaxed text-ink-soft">
+        <input name="consent" type="checkbox" required class="mt-0.5 size-4 shrink-0 accent-ink" />
+        <span class="kl-consent-text">I agree that {SITE.name} may use these details to respond to my enquiry, as described in the <a href="/privacy/" class="underline underline-offset-2">privacy notice</a>.</span>
+      </label>
+      <p class="kl-intake-error hidden text-xs text-red-700" role="alert"></p>
+      <div class="flex items-center gap-3">
+        <button type="submit" class="rounded-sm bg-ink text-paper px-4 py-2 font-medium hover:bg-ink-soft disabled:opacity-50 transition-colors">Send enquiry</button>
+        <button type="button" class="kl-intake-cancel text-xs text-muted underline underline-offset-2">Cancel</button>
+      </div>
+    </form>
+  </template>
+</div>
+
+<script>
+  type Source = { title: string; url: string | null };
+  type Kind = 'answer' | 'handoff' | 'refused' | 'error' | 'notice';
+  type Msg = { role: 'user' | 'assistant'; text: string; sources?: Source[]; kind?: Kind };
+
+  const root = document.getElementById('kl-chat')!;
+  const API = (root.dataset.api || '').replace(/\/$/, '');
+  const PAGE_PRACTICE: Record<string, string> = JSON.parse(root.dataset.practice || '{}');
+  const launcher = document.getElementById('kl-launcher') as HTMLButtonElement;
+  const panel = document.getElementById('kl-panel') as HTMLElement;
+  const log = document.getElementById('kl-log') as HTMLElement;
+  const welcome = document.getElementById('kl-welcome') as HTMLElement;
+  const form = document.getElementById('kl-form') as HTMLFormElement;
+  const input = document.getElementById('kl-input') as HTMLTextAreaElement;
+  const send = document.getElementById('kl-send') as HTMLButtonElement;
+  const count = document.getElementById('kl-count') as HTMLElement;
+  const intakeTpl = document.getElementById('kl-intake-tpl') as HTMLTemplateElement;
+
+  const STORE = 'kl-chat-v1';
+  const MAX_HISTORY = 6;
+  let messages: Msg[] = [];
+  let busy = false;
+
+  // --- storage: the conversation survives clicking through to a cited page ---
+  function save(open = !panel.hidden) {
+    try { sessionStorage.setItem(STORE, JSON.stringify({ messages, open })); } catch { /* storage blocked */ }
+  }
+  function load(): { messages: Msg[]; open: boolean } | null {
+    try { return JSON.parse(sessionStorage.getItem(STORE) || 'null'); } catch { return null; }
+  }
+
+  // --- warm-up: wake the API (free hosting sleeps) before anyone types ---
+  function warm() {
+    try {
+      const last = Number(sessionStorage.getItem('kl-warm') || 0);
+      if (Date.now() - last < 5 * 60_000) return;
+      sessionStorage.setItem('kl-warm', String(Date.now()));
+    } catch { /* still ping */ }
+    fetch(`${API}/health`, { mode: 'cors' }).catch(() => {});
+  }
+  if ('requestIdleCallback' in window) requestIdleCallback(warm); else setTimeout(warm, 1000);
+
+  // --- rendering ---------------------------------------------------------
+  function esc(s: string) {
+    return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+  }
+  function inline(s: string) {
+    return esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  }
+  /** Minimal, safe formatting: paragraphs, bullet/numbered lists, bold. */
+  function format(text: string) {
+    return text.trim().split(/\n{2,}/).map((block) => {
+      const lines = block.split('\n').filter((l) => l.trim());
+      if (lines.length && lines.every((l) => /^\s*(?:[-*•]|\d+[.)])\s+/.test(l))) {
+        const ordered = /^\s*\d/.test(lines[0]);
+        const items = lines.map((l) => `<li>${inline(l.replace(/^\s*(?:[-*•]|\d+[.)])\s+/, ''))}</li>`).join('');
+        return ordered ? `<ol class="list-decimal pl-5 space-y-1">${items}</ol>` : `<ul class="list-disc pl-5 space-y-1">${items}</ul>`;
+      }
+      return `<p>${lines.map(inline).join('<br>')}</p>`;
+    }).join('');
+  }
+
+  function bubble(msg: Msg): HTMLElement {
+    const wrap = document.createElement('div');
+    if (msg.role === 'user') {
+      wrap.className = 'flex justify-end';
+      wrap.innerHTML = `<p class="max-w-[85%] rounded-md bg-ink text-paper px-3.5 py-2.5 leading-relaxed whitespace-pre-wrap"></p>`;
+      wrap.firstElementChild!.textContent = msg.text;
+      return wrap;
+    }
+    wrap.className = 'kl-assistant space-y-2';
+    const tone = msg.kind === 'error' || msg.kind === 'notice'
+      ? 'bg-brass-soft border-brass/40 text-ink'
+      : 'bg-white border-line text-ink-soft';
+    wrap.innerHTML = `<div class="kl-text max-w-[92%] rounded-md border ${tone} px-3.5 py-2.5 leading-relaxed space-y-2"></div>`;
+    setText(wrap, msg.text);
+    decorate(wrap, msg);
+    return wrap;
+  }
+
+  function setText(wrap: HTMLElement, text: string) {
+    (wrap.querySelector('.kl-text') as HTMLElement).innerHTML = text ? format(text) : typing();
+  }
+
+  function typing() {
+    return '<span class="inline-flex gap-1 py-1" aria-label="Assistant is typing">' +
+      '<span class="size-1.5 rounded-full bg-muted animate-bounce"></span>' +
+      '<span class="size-1.5 rounded-full bg-muted animate-bounce [animation-delay:120ms]"></span>' +
+      '<span class="size-1.5 rounded-full bg-muted animate-bounce [animation-delay:240ms]"></span></span>';
+  }
+
+  /** Source badges + the lawyer handoff action under an assistant message. */
+  function decorate(wrap: HTMLElement, msg: Msg) {
+    wrap.querySelectorAll('.kl-extra').forEach((n) => n.remove());
+    if (msg.sources?.length) {
+      const box = document.createElement('div');
+      box.className = 'kl-extra flex flex-wrap items-center gap-1.5 text-xs';
+      box.innerHTML = '<span class="text-muted">Sources:</span>';
+      for (const s of msg.sources) {
+        const a = document.createElement(s.url ? 'a' : 'span');
+        a.className = 'inline-flex items-center gap-1 rounded-full border border-line bg-white px-2.5 py-1 text-ink hover:border-brass transition-colors';
+        if (s.url) (a as HTMLAnchorElement).href = s.url;
+        a.textContent = s.title;
+        box.append(a);
+      }
+      wrap.append(box);
+    }
+    // Every reply gets the button, always with the same label: the model sometimes
+    // points to "the Talk to a lawyer button below" from an answer or a refusal too.
+    if (msg.kind === 'handoff' || msg.kind === 'refused' || msg.kind === 'answer') {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = msg.kind === 'handoff'
+        ? 'kl-extra rounded-sm bg-brass text-ink px-3.5 py-2 text-sm font-medium hover:bg-brass-deep hover:text-paper transition-colors'
+        : 'kl-extra text-xs text-ink underline underline-offset-2 decoration-brass';
+      btn.textContent = 'Talk to a lawyer';
+      btn.addEventListener('click', () => openIntake(btn));
+      wrap.append(btn);
+    }
+  }
+
+  function scrollDown() {
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function renderAll() {
+    log.querySelectorAll(':scope > :not(#kl-welcome)').forEach((n) => n.remove());
+    welcome.hidden = messages.length > 0;
+    for (const m of messages) log.append(bubble(m));
+    scrollDown();
+  }
+
+  // --- open / close ------------------------------------------------------
+  function open(focus = true) {
+    panel.hidden = false;
+    launcher.hidden = true;
+    launcher.setAttribute('aria-expanded', 'true');
+    document.documentElement.classList.toggle('max-sm:overflow-hidden', true);
+    save(true);
+    scrollDown();
+    if (focus) input.focus();
+  }
+  function close() {
+    panel.hidden = true;
+    launcher.hidden = false;
+    launcher.setAttribute('aria-expanded', 'false');
+    document.documentElement.classList.toggle('max-sm:overflow-hidden', false);
+    save(false);
+    launcher.focus();
+  }
+  launcher.addEventListener('click', () => open());
+  document.getElementById('kl-close')!.addEventListener('click', close);
+  document.getElementById('kl-reset')!.addEventListener('click', () => {
+    if (busy) return;
+    messages = [];
+    save();
+    renderAll();
+    input.focus();
+  });
+  panel.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  // Any element with data-open-assistant opens the chat; data-open-assistant="enquiry"
+  // opens it straight at the enquiry form.
+  document.querySelectorAll<HTMLElement>('[data-open-assistant]').forEach((el) => el.addEventListener('click', (e) => {
+    e.preventDefault();
+    open(el.dataset.openAssistant !== 'enquiry');
+    if (el.dataset.openAssistant === 'enquiry') { welcome.hidden = true; openIntake(launcher); }
+  }));
+
+  // --- asking ------------------------------------------------------------
+  function history() {
+    // The turns BEFORE the current question, newest last, capped like the API.
+    return messages
+      .filter((m) => m.kind !== 'error' && m.kind !== 'notice')
+      .slice(-MAX_HISTORY)
+      .map((m) => ({ role: m.role, text: m.text.slice(0, 1000) }));
+  }
+
+  async function ask(question: string) {
+    question = question.trim();
+    if (!question || busy) return;
+    busy = true;
+    send.disabled = true;
+    const prior = history();
+    messages.push({ role: 'user', text: question });
+    welcome.hidden = true;
+    log.append(bubble(messages[messages.length - 1]));
+
+    const reply: Msg = { role: 'assistant', text: '', kind: 'answer' };
+    const wrap = bubble(reply);
+    log.append(wrap);
+    scrollDown();
+
+    // A sleeping free-tier server can take ~30-60s to wake. Say so instead of looking broken.
+    const slow = setTimeout(() => {
+      if (!reply.text) (wrap.querySelector('.kl-text') as HTMLElement).innerHTML =
+        typing() + '<p class="text-xs text-muted mt-1">Waking up the assistant. This can take up to a minute the first time.</p>';
+    }, 5000);
+
+    try {
+      const res = await fetch(`${API}/chat/stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, history: prior }),
+      });
+      if (!res.ok || !res.body) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Sorry, something went wrong. Please try again.');
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let cut;
+        while ((cut = buf.indexOf('\n\n')) !== -1) {
+          const line = buf.slice(0, cut).trim();
+          buf = buf.slice(cut + 2);
+          if (!line.startsWith('data:')) continue;
+          const ev = JSON.parse(line.slice(5));
+          if (ev.type === 'token') {
+            reply.text += ev.text;
+            setText(wrap, reply.text);
+            scrollDown();
+          } else if (ev.type === 'done') {
+            reply.kind = ev.handoff ? 'handoff' : ev.refused ? 'refused' : 'answer';
+            reply.sources = ev.sources || [];
+          } else if (ev.type === 'error') {
+            throw new Error(ev.error);
+          }
+        }
+      }
+      if (!reply.text) throw new Error('Sorry, something went wrong. Please try again.');
+    } catch (e) {
+      const network = e instanceof TypeError;   // fetch itself failed: offline, CORS or server down
+      reply.kind = 'error';
+      reply.sources = [];
+      reply.text = network
+        ? "I couldn't reach the assistant just now. Please try again in a moment, or use the contact page."
+        : (e as Error).message;
+      wrap.replaceWith(bubble(reply));
+    } finally {
+      clearTimeout(slow);
+      if (reply.kind !== 'error') decorate(wrap, reply);   // on error, wrap was replaced
+      messages.push(reply);
+      save();
+      busy = false;
+      send.disabled = false;
+      scrollDown();
+    }
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const q = input.value;
+    input.value = '';
+    resize();
+    ask(q);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+  });
+  function resize() {
+    input.style.height = 'auto';
+    input.style.height = `${Math.min(input.scrollHeight, 128)}px`;
+    count.textContent = `${input.value.length} / 500`;
+  }
+  input.addEventListener('input', resize);
+  log.querySelectorAll<HTMLButtonElement>('[data-starter]').forEach((b) =>
+    b.addEventListener('click', () => ask(b.textContent || '')));
+
+  // --- lawyer handoff: the enquiry form ----------------------------------
+  function openIntake(trigger: HTMLElement) {
+    log.querySelector('.kl-intake')?.remove();
+    const node = intakeTpl.content.firstElementChild!.cloneNode(true) as HTMLFormElement;
+    const lastQuestion = [...messages].reverse().find((m) => m.role === 'user')?.text || '';
+    (node.elements.namedItem('description') as HTMLTextAreaElement).value = lastQuestion;
+    // Pre-select the practice area from the pages the last answer cited.
+    const lastSources = [...messages].reverse().find((m) => m.sources?.length)?.sources || [];
+    const practiceId = lastSources.map((s) => (s.url ? PAGE_PRACTICE[s.url] : undefined)).find(Boolean);
+    const select = node.elements.namedItem('matter_type') as HTMLSelectElement;
+    if (practiceId && [...select.options].some((o) => o.value === practiceId)) select.value = practiceId;
+    const err = node.querySelector('.kl-intake-error') as HTMLElement;
+    node.querySelector('.kl-intake-cancel')!.addEventListener('click', () => { node.remove(); trigger.focus(); });
+
+    node.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const f = new FormData(node);
+      const data = {
+        name: String(f.get('name') || '').trim(),
+        email: String(f.get('email') || '').trim() || null,
+        phone: String(f.get('phone') || '').trim() || null,
+        matter_type: String(f.get('matter_type') || ''),
+        description: String(f.get('description') || '').trim(),
+        page_url: location.pathname,
+        consent: f.get('consent') === 'on',
+        website: String(f.get('website') || '') || null,
+      };
+      const problem =
+        data.name.length < 2 ? 'Please enter your name.' :
+        !data.email && !data.phone ? 'Please give an email address or a phone number.' :
+        !data.matter_type ? 'Please choose the type of matter.' :
+        data.description.length < 10 ? 'Please add a short description (at least 10 characters).' :
+        !data.consent ? 'Please tick the consent box so we can use your details to reply.' : '';
+      if (problem) { err.textContent = problem; err.hidden = false; err.classList.remove('hidden'); return; }
+
+      const submit = node.querySelector('button[type=submit]') as HTMLButtonElement;
+      submit.disabled = true;
+      try {
+        const res = await fetch(`${API}/intake`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(body.error || 'Sorry, your enquiry could not be sent. Please try again.');
+        node.remove();
+        const done: Msg = { role: 'assistant', kind: 'notice', text: body.message };
+        messages.push(done);
+        const el = bubble(done);
+        const wa = document.createElement('a');
+        wa.href = body.whatsapp_url;
+        wa.target = '_blank';
+        wa.rel = 'noopener';
+        wa.className = 'inline-flex items-center gap-2 rounded-sm bg-[#1f7a4d] text-white px-3.5 py-2 text-sm font-medium hover:opacity-90';
+        wa.textContent = 'Message us on WhatsApp';
+        el.append(wa);
+        log.append(el);
+        save();
+        scrollDown();
+      } catch (e2) {
+        err.textContent = e2 instanceof TypeError
+          ? "Couldn't reach the server. Please try again, or email us from the contact page."
+          : (e2 as Error).message;
+        err.classList.remove('hidden');
+        submit.disabled = false;
+      }
+    });
+
+    log.append(node);
+    scrollDown();
+    (node.elements.namedItem('name') as HTMLInputElement).focus();
+  }
+
+  // --- restore on page load ---------------------------------------------
+  const saved = load();
+  if (saved?.messages?.length) {
+    messages = saved.messages;
+    renderAll();
+  }
+  if (saved?.open) open(false);   // don't steal focus on page load
+</script>

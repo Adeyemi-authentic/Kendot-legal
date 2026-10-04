@@ -1,0 +1,12 @@
+  first token  2.06s   done  2.58s   How much does a first consultation with your lawyers cost?
+  first token  2.23s   done  2.56s   When are your offices open?
+  first token  2.12s   done  2.28s   Who is in charge of the firm's tax work?
+  first token  2.18s   done  2.59s   If a tenancy agreement says nothing about notice, how much n
+  first token  2.03s   done  3.03s   What happens to someone who pays more advance rent than the 
+  first token  2.10s   done  2.25s   Which parts of Lagos are not covered by the Tenancy Law?
+  first token  2.10s   done  2.70s   What details must a Lagos rent receipt show?
+  first token  2.38s   done  2.57s   By what date must employers file their annual return of staf
+  first token  1.97s   done  2.55s   What is the development levy and what rate is it?
+  first token  2.07s   done  2.11s   What is the minimum issued share capital for a private compa
+
+  MET   median time to first token 2.10s (p90 2.23s)   target < 3s

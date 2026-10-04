@@ -1,0 +1,18 @@
+---
+import type { CollectionEntry } from 'astro:content';
+interface Props {
+  post: CollectionEntry<'insights'>;
+  practiceTitle?: string;
+}
+const { post, practiceTitle } = Astro.props;
+const date = post.data.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+---
+
+<article class="group relative flex flex-col rounded-sm border border-line bg-white p-6 transition-shadow hover:shadow-md">
+  <p class="text-xs font-medium uppercase tracking-wider text-brass-deep">{practiceTitle}</p>
+  <h3 class="mt-3 text-xl font-semibold leading-snug">
+    <a href={`/insights/${post.id}/`} class="after:absolute after:inset-0 group-hover:underline underline-offset-4 decoration-brass">{post.data.title}</a>
+  </h3>
+  <p class="mt-3 text-sm text-muted leading-relaxed flex-1">{post.data.summary}</p>
+  <p class="mt-5 text-xs text-muted">{date} &middot; {post.data.author}</p>
+</article>

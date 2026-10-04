@@ -1,0 +1,49 @@
+---
+// Generic content pages: /about/, /contact/, /faqs/, /privacy/
+import { getCollection, render } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import { SITE } from '../site';
+
+export async function getStaticPaths() {
+  const pages = await getCollection('pages');
+  return pages.map((entry) => ({ params: { page: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const isContact = entry.id === 'contact';
+---
+
+<Layout title={entry.data.title} description={entry.data.summary}>
+  <PageHeader eyebrow={SITE.name} title={entry.data.title} summary={entry.data.summary} />
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 py-14 grid gap-12 lg:grid-cols-[1fr_320px]">
+    <article class="prose-kendot">
+      <Content />
+    </article>
+    <aside class="space-y-6">
+      {isContact && (
+        <div class="rounded-sm bg-ink text-paper p-6">
+          <p class="font-serif text-xl">Send an enquiry online</p>
+          <p class="mt-2 text-sm text-paper/75 leading-relaxed">Tell us briefly what you need. A lawyer from the right team replies within one working day.</p>
+          <button type="button" data-open-assistant="enquiry" class="mt-5 rounded-sm bg-brass text-ink px-5 py-2.5 text-sm font-medium hover:bg-paper transition-colors">Start an enquiry</button>
+        </div>
+      )}
+      {isContact ? (
+        SITE.offices.map((o) => (
+          <div class="rounded-sm border border-line bg-white p-6">
+            <p class="text-xs font-semibold uppercase tracking-wider text-brass-deep">{o.city}</p>
+            <p class="mt-2 leading-relaxed">{o.address}</p>
+            <p class="mt-2 text-sm text-muted">{SITE.hours}</p>
+          </div>
+        ))
+      ) : (
+        <div class="rounded-sm bg-ink text-paper p-6">
+          <p class="font-serif text-xl">Speak to a lawyer</p>
+          <p class="mt-2 text-sm text-paper/75 leading-relaxed">Consultations last up to 45 minutes, in person or by video call.</p>
+          <a href="/contact/" class="mt-5 inline-block rounded-sm bg-brass text-ink px-5 py-2.5 text-sm font-medium hover:bg-paper transition-colors">Contact us</a>
+        </div>
+      )}
+    </aside>
+  </div>
+</Layout>

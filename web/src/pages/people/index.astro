@@ -1,0 +1,32 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import PageHeader from '../../components/PageHeader.astro';
+
+const practice = await getCollection('practice');
+const practiceTitle = Object.fromEntries(practice.map((p) => [p.id, p.data.title]));
+const people = (await getCollection('people')).sort((a, b) => a.data.order - b.data.order);
+const rendered = await Promise.all(people.map(async (p) => ({ p, Content: (await render(p)).Content })));
+const initials = (name: string) => name.split(' ').map((w) => w[0]).join('').slice(0, 2);
+---
+
+<Layout title="Our people" description="The partners and lawyers of Kendot Legal.">
+  <PageHeader eyebrow="Our people" title="The team" summary="Partners and lawyers in our Lagos and Abuja offices." />
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 py-14 grid gap-6 md:grid-cols-2">
+    {rendered.map(({ p, Content }) => (
+      <article id={p.id} class="scroll-mt-24 rounded-sm border border-line bg-white p-7 flex gap-5">
+        <div class="shrink-0 grid place-items-center size-16 rounded-full bg-brass-soft text-ink font-serif text-xl font-semibold" aria-hidden="true">{initials(p.data.name)}</div>
+        <div>
+          <h2 class="text-xl font-semibold">{p.data.name}</h2>
+          <p class="text-sm text-brass-deep font-medium">{p.data.role}</p>
+          <div class="mt-3 text-sm text-ink-soft leading-relaxed [&_em]:text-muted [&_p+p]:mt-3"><Content /></div>
+          <p class="mt-4 flex flex-wrap gap-2">
+            {p.data.practices.map((id) => (
+              <a href={`/practice/${id}/`} class="rounded-full border border-line px-3 py-1 text-xs hover:border-brass">{practiceTitle[id]}</a>
+            ))}
+          </p>
+        </div>
+      </article>
+    ))}
+  </div>
+</Layout>

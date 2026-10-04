@@ -1,0 +1,28 @@
+---
+title: Real Estate and Tenancy
+summary: Property purchases, leases, landlord and tenant disputes and recovery of premises, with a focus on Lagos.
+order: 2
+---
+
+Our Real Estate and Tenancy team acts for landlords, tenants, property developers, estate managers and buyers.
+
+## What we do
+
+- **Property transactions:** we investigate title and search land registries, draft deeds of assignment and handle perfection of title, including applications for the Governor's consent.
+- **Leases and tenancy agreements:** we draft and review residential and commercial leases, and we explain rent, service charge and renewal terms.
+- **Landlord and tenant disputes:** we prepare and serve notices to quit and notices of owner's intention to recover possession, bring recovery of premises actions, and defend unlawful eviction claims.
+- **Mediation:** many tenancy disputes can be resolved through mediation or arbitration before a matter goes to court, which is often faster and cheaper. We represent clients in these processes.
+
+## Lagos Tenancy Law 2011
+
+Most residential and commercial tenancies in Lagos State are governed by the Tenancy Law of Lagos State 2011. It sets rules on advance rent, rent receipts, the length of a notice to quit and how a landlord may lawfully recover possession. Premises in Apapa, Ikeja GRA, Ikoyi and Victoria Island are exempt from the Law.
+
+## Who leads this practice
+
+The practice is led by Tomi Kendot, Managing Partner, and supported by Bayo Adewale, Associate.
+
+## Related insights
+
+- Notice to quit in Lagos: how much notice must a landlord give?
+- How much advance rent can a landlord demand in Lagos?
+- Rent receipts, deposits and unlawful eviction under the Lagos Tenancy Law

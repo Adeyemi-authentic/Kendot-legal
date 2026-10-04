@@ -1,0 +1,46 @@
+---
+title: Data protection basics for Nigerian businesses under the NDPA 2023
+summary: What the Nigeria Data Protection Act 2023 requires of businesses that handle personal data, including lawful bases, individuals' rights and breach notification.
+date: 2026-06-10
+practice: ip-data-protection
+author: Chidera Eze
+sources: ["Nigeria Data Protection Act 2023"]
+---
+
+The Nigeria Data Protection Act 2023 (NDPA) is Nigeria's main data protection law. It created the Nigeria Data Protection Commission (NDPC), which supervises and enforces the Act. The NDPA applies to businesses that collect or use personal data, which includes almost every business with customers or staff.
+
+## Personal data needs a lawful basis
+
+A business may only process personal data if it has a lawful basis. The Act recognises six:
+
+- the person's **consent**;
+- performance of a **contract** with the person;
+- compliance with a **legal obligation**;
+- protecting the person's **vital interests**;
+- a task carried out in the **public interest** or in the exercise of official authority; and
+- the **legitimate interests** of the business, where these are not overridden by the person's rights.
+
+## Individuals have rights
+
+People whose data you hold (data subjects) have the right to be informed about how their data is used, to access it, to have it corrected or erased, to restrict or object to processing, to data portability, and to withdraw consent at any time.
+
+## Personal data breaches
+
+If a personal data breach is likely to put people's rights and freedoms at risk, the data controller must notify the NDPC **within 72 hours** of becoming aware of it. If the risk to people is high, the controller must also inform the people affected.
+
+## Businesses of major importance
+
+Some data controllers and processors are classed as being "of major importance", generally because of the volume or sensitivity of the data they handle. They must register with the NDPC and appoint a data protection officer.
+
+## Penalties
+
+The NDPC can impose penalties. For a data controller or processor of major importance, the penalty can be up to the higher of 10,000,000 naira or 2 percent of its annual gross revenue in the previous financial year. For others, it can be up to the higher of 2,000,000 naira or 2 percent.
+
+## First steps for a business
+
+1. List the personal data you collect and why you collect it.
+2. Publish a clear privacy notice.
+3. Put data processing agreements in place with your vendors.
+4. Write down a breach response plan so that you can meet the 72-hour deadline.
+
+*This article is general information, not legal advice. For help with data protection compliance, contact our Intellectual Property and Data Protection team.*

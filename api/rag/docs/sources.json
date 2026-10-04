@@ -1,0 +1,140 @@
+{
+  "pages--about.txt": {
+    "title": "About Kendot Legal",
+    "url": "/about/",
+    "kind": "pages",
+    "id": "about"
+  },
+  "pages--contact.txt": {
+    "title": "Contact Kendot Legal",
+    "url": "/contact/",
+    "kind": "pages",
+    "id": "contact"
+  },
+  "pages--faqs.txt": {
+    "title": "Frequently Asked Questions",
+    "url": "/faqs/",
+    "kind": "pages",
+    "id": "faqs"
+  },
+  "pages--privacy.txt": {
+    "title": "Privacy Notice",
+    "url": "/privacy/",
+    "kind": "pages",
+    "id": "privacy"
+  },
+  "practice--corporate-commercial.txt": {
+    "title": "Corporate and Commercial",
+    "url": "/practice/corporate-commercial/",
+    "kind": "practice",
+    "id": "corporate-commercial"
+  },
+  "practice--dispute-resolution.txt": {
+    "title": "Dispute Resolution",
+    "url": "/practice/dispute-resolution/",
+    "kind": "practice",
+    "id": "dispute-resolution"
+  },
+  "practice--ip-data-protection.txt": {
+    "title": "Intellectual Property and Data Protection",
+    "url": "/practice/ip-data-protection/",
+    "kind": "practice",
+    "id": "ip-data-protection"
+  },
+  "practice--real-estate-tenancy.txt": {
+    "title": "Real Estate and Tenancy",
+    "url": "/practice/real-estate-tenancy/",
+    "kind": "practice",
+    "id": "real-estate-tenancy"
+  },
+  "practice--tax.txt": {
+    "title": "Tax",
+    "url": "/practice/tax/",
+    "kind": "practice",
+    "id": "tax"
+  },
+  "insights--advance-rent-lagos.txt": {
+    "title": "How much advance rent can a landlord demand in Lagos?",
+    "url": "/insights/advance-rent-lagos/",
+    "kind": "insights",
+    "id": "advance-rent-lagos"
+  },
+  "insights--company-tax-filing-deadlines.txt": {
+    "title": "Company tax filing deadlines under the Nigeria Tax Administration Act 2025",
+    "url": "/insights/company-tax-filing-deadlines/",
+    "kind": "insights",
+    "id": "company-tax-filing-deadlines"
+  },
+  "insights--ndpa-2023-basics.txt": {
+    "title": "Data protection basics for Nigerian businesses under the NDPA 2023",
+    "url": "/insights/ndpa-2023-basics/",
+    "kind": "insights",
+    "id": "ndpa-2023-basics"
+  },
+  "insights--nigeria-tax-act-2025-small-businesses.txt": {
+    "title": "What the Nigeria Tax Act 2025 changes for small businesses",
+    "url": "/insights/nigeria-tax-act-2025-small-businesses/",
+    "kind": "insights",
+    "id": "nigeria-tax-act-2025-small-businesses"
+  },
+  "insights--notice-to-quit-lagos.txt": {
+    "title": "Notice to quit in Lagos: how much notice must a landlord give?",
+    "url": "/insights/notice-to-quit-lagos/",
+    "kind": "insights",
+    "id": "notice-to-quit-lagos"
+  },
+  "insights--registering-a-company-in-nigeria.txt": {
+    "title": "Registering a company in Nigeria: a step-by-step guide",
+    "url": "/insights/registering-a-company-in-nigeria/",
+    "kind": "insights",
+    "id": "registering-a-company-in-nigeria"
+  },
+  "insights--registering-a-trademark-in-nigeria.txt": {
+    "title": "Protecting your brand: registering a trademark in Nigeria",
+    "url": "/insights/registering-a-trademark-in-nigeria/",
+    "kind": "insights",
+    "id": "registering-a-trademark-in-nigeria"
+  },
+  "insights--rent-receipts-unlawful-eviction.txt": {
+    "title": "Rent receipts, deposits and unlawful eviction under the Lagos Tenancy Law",
+    "url": "/insights/rent-receipts-unlawful-eviction/",
+    "kind": "insights",
+    "id": "rent-receipts-unlawful-eviction"
+  },
+  "insights--rights-if-arrested.txt": {
+    "title": "Your rights if you are arrested or detained in Nigeria",
+    "url": "/insights/rights-if-arrested/",
+    "kind": "insights",
+    "id": "rights-if-arrested"
+  },
+  "people--bayo-adewale.txt": {
+    "title": "Bayo Adewale, Associate",
+    "url": "/people/#bayo-adewale",
+    "kind": "people",
+    "id": "bayo-adewale"
+  },
+  "people--chidera-eze.txt": {
+    "title": "Chidera Eze, Senior Associate",
+    "url": "/people/#chidera-eze",
+    "kind": "people",
+    "id": "chidera-eze"
+  },
+  "people--halima-sani.txt": {
+    "title": "Halima Sani, Partner",
+    "url": "/people/#halima-sani",
+    "kind": "people",
+    "id": "halima-sani"
+  },
+  "people--ifeanyi-obi.txt": {
+    "title": "Ifeanyi Obi, Partner",
+    "url": "/people/#ifeanyi-obi",
+    "kind": "people",
+    "id": "ifeanyi-obi"
+  },
+  "people--tomi-kendot.txt": {
+    "title": "Tomi Kendot, Managing Partner",
+    "url": "/people/#tomi-kendot",
+    "kind": "people",
+    "id": "tomi-kendot"
+  }
+}

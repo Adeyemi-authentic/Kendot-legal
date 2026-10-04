@@ -1,0 +1,35 @@
+---
+title: How much advance rent can a landlord demand in Lagos?
+summary: The Lagos Tenancy Law 2011 caps advance rent at one year for new tenants and makes both paying and receiving more than the limit an offence.
+date: 2026-04-02
+practice: real-estate-tenancy
+author: Tomi Kendot
+sources: ["Tenancy Law of Lagos State 2011, sections 1(3) and 4"]
+---
+
+Demands for two or three years' rent in advance are common in Lagos. Section 4 of the Tenancy Law of Lagos State 2011 limits how much advance rent can be demanded or paid.
+
+## New tenants
+
+Under section 4(3), a landlord or agent must not demand or receive more than **one year's rent** in advance from a new or prospective tenant. Under section 4(4), a new tenant must not offer or pay more than one year's rent in advance.
+
+## Sitting tenants
+
+A sitting tenant is a tenant who is already in the premises. Under section 4(1), a landlord or agent must not demand or receive more than:
+
+- **six months' rent** from a monthly tenant; or
+- **one year's rent** from a yearly tenant.
+
+Under section 4(2), the same limits apply to what a sitting tenant may offer or pay.
+
+## Both sides commit an offence
+
+The Law applies to both the landlord and the tenant. Under section 4(5), any person who receives or pays rent in excess of these limits is guilty of an offence. On conviction, the penalty is a fine of 100,000 naira or three months' imprisonment.
+
+Tenants should know that agreeing to pay two years' rent upfront does not protect them from the Law: paying the excess is also an offence.
+
+## Where the limits do not apply
+
+The Tenancy Law, including these limits, does not apply to premises in Apapa, Ikeja GRA, Ikoyi and Victoria Island (section 1(3)).
+
+*This article is general information, not legal advice. For advice on a rent demand, book a consultation with our Real Estate and Tenancy team.*

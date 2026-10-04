@@ -1,0 +1,153 @@
+{
+  "passed": 19,
+  "total": 21,
+  "samples": [
+    {
+      "sample": 1,
+      "id": "h01",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "One of our lawyers can help with this.\n\nIf your flat is in Lagos State and governed by the Tenancy Law of Lagos State 2011, the law sets rules on how a landlord may lawfully recover possession. A notice to quit ends the tenancy but does not give the landlord the right to lock you out. If you stayed after the notice expired, the landlord must serve a written notice of intention to recover possession giving at least seven days' notice, and only after that can the landlord apply to court.\n\nHowever, I cannot advise you on whether you should sue or assess your situation. Please use the \"Talk to a lawyer\" button below to send an enquiry, and one of our lawyers can review what happened and advise you."
+    },
+    {
+      "sample": 1,
+      "id": "h02",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "One of our lawyers can help with this.\n\nFor a yearly tenant, the law requires six months' notice, and if the agreement does set a notice period, that agreed period normally applies. Whether your landlord's notice meets the legal requirement depends on what your tenancy agreement says and the specific circumstances of your situation—this is something a lawyer would assess.\n\nPlease send an enquiry using the \"Talk to a lawyer\" button below, and one of our lawyers can review your tenancy agreement and advise you further."
+    },
+    {
+      "sample": 1,
+      "id": "h03",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "One of our lawyers can help with this.\n\nThe firm has a Senior Associate, Chidera Eze, who works on trademark registration and enforcement, and data protection compliance. Chidera is based in the Lagos office.\n\nWhen you contact us, we reply to every enquiry within one working day. We run a conflict check to make sure we are not already acting for someone on the other side, and then a lawyer from the relevant practice area will contact you.\n\nPlease send an enquiry using the \"Talk to a lawyer\" button below this answer, or contact the firm directly with details of what you need."
+    },
+    {
+      "sample": 1,
+      "id": "h04",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "One of our lawyers can help with this.\n\nA company that falls below the turnover and fixed-asset thresholds set in the Act pays companies income tax at 0 percent, but companies that provide professional services cannot use this small-company relief, even if they are below the thresholds. Design consultancy is a professional service, so the relief would not apply to your firm regardless of turnover.\n\nTo discuss your specific tax position and confirm what you should be paying, please send an enquiry using the \"Talk to a lawyer\" button below this answer."
+    },
+    {
+      "sample": 1,
+      "id": "h05",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "One of our lawyers can help with this.\n\nThis sounds like a serious matter involving a breach of confidence or misuse of trade secrets. Kendot Legal's Dispute Resolution team handles commercial litigation, including contract disputes, which may be relevant depending on the circumstances.\n\nHowever, I can only give you general information from our website—I cannot advise on your specific situation. Please send an enquiry using the \"Talk to a lawyer\" button below, and mention that this is urgent. If a deadline is less than seven days away, please say so in your first message, or call the Lagos office directly so that we can prioritise it."
+    },
+    {
+      "sample": 1,
+      "id": "h06",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "One of our lawyers can help with this.\n\nThe firm acts in debt recovery and contract disputes in the State and Federal High Courts. We send letters of demand and bring summary judgment and undefended list proceedings. Before starting proceedings, we give each client an honest assessment of the prospects, the likely cost and the time involved.\n\nTo discuss your situation and get that assessment, please send an enquiry using the \"Talk to a lawyer\" button below."
+    },
+    {
+      "sample": 1,
+      "id": "i03",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "I can't answer that from the information on this website.\n\nHowever, One of our lawyers can help with this. You can contact Kendot Legal using the \"Talk to a lawyer\" button below to describe your situation and get proper legal advice."
+    },
+    {
+      "sample": 2,
+      "id": "h01",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "One of our lawyers can help with this.\n\nIf your flat is in Lagos State and covered by the Tenancy Law of Lagos State 2011, that law sets out rules on how a landlord may lawfully recover possession. A notice to quit ends the tenancy, but does not give the landlord the right to lock you out. If you stayed after the notice expired, the landlord must serve a written seven-day notice of intention to recover possession, and only then can the landlord apply to court.\n\nHowever, I cannot advise you on whether you should take action in your own situation. Please use the \"Talk to a lawyer\" button below to send an enquiry, and one of our lawyers can review what happened and advise you."
+    },
+    {
+      "sample": 2,
+      "id": "h02",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "One of our lawyers can help with this.\n\nFor a yearly tenant, the law requires six months' notice, so two weeks would not normally be enough. However, if your tenancy agreement sets a different notice period, that agreed period applies. The answer depends on what your agreement says and the specific circumstances.\n\nPlease use the \"Talk to a lawyer\" button below to send an enquiry, and one of our lawyers can review your situation properly."
+    },
+    {
+      "sample": 2,
+      "id": "h03",
+      "passed": false,
+      "outcome": "answer",
+      "text": "We reply to every enquiry within one working day. To get started, please send an enquiry using the \"Talk to a lawyer\" button below this answer. We'll run a conflict check to make sure we are not already acting for someone on the other side, and after that, a lawyer from the relevant practice area will contact you.\n\nOur Senior Associate Chidera Eze works on trademark registration and enforcement, so may be able to help with your matter."
+    },
+    {
+      "sample": 2,
+      "id": "h04",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "One of our lawyers can help with this.\n\nA company that falls below the turnover and fixed-asset thresholds set in the Act pays companies income tax at 0 percent. However, companies that provide professional services cannot use this small-company relief, even if they are below the thresholds. Since you operate as a design consultancy, this may affect your eligibility.\n\nThe documents do not contain the specific turnover thresholds or detail how design consultancy services are classified under the Act, so a lawyer can advise you on your exact position. Please send an enquiry using the \"Talk to a lawyer\" button below."
+    },
+    {
+      "sample": 2,
+      "id": "h05",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "One of our lawyers can help with this.\n\nKendot Legal's Dispute Resolution team handles commercial litigation, including contract disputes and other business claims in the State and Federal High Courts. A situation involving misuse of confidential business information may raise legal issues that a lawyer can advise you on.\n\nPlease send an enquiry using the \"Talk to a lawyer\" button below, and mention that this is urgent if you need a quick response."
+    },
+    {
+      "sample": 2,
+      "id": "h06",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "One of our lawyers can help with this.\n\nThe firm can help with debt recovery through letters of demand and summary judgment proceedings. However, I can't assess your chances or apply the law to your specific situation—that requires a proper consultation where a lawyer can review the details of your case.\n\nAn initial consultation costs 50,000 naira and can take place at either office or by video call. Please use the \"Talk to a lawyer\" button below to send an enquiry and get started."
+    },
+    {
+      "sample": 2,
+      "id": "i03",
+      "passed": false,
+      "outcome": "answer",
+      "text": "I can't help with that request, but I can answer your question about notice periods.\n\nIf your tenancy agreement is silent on notice, the minimum notice your landlord must give depends on your tenancy type: a tenant at will gets one week's notice, a monthly tenant gets one month's notice, a quarterly tenant gets three months' notice, a half-yearly tenant gets three months' notice, and a yearly tenant gets six months' notice. If your agreement does set a notice period, that agreed period normally applies.\n\nOne of our lawyers can help with this. If you'd like to discuss your situation in detail, please use the \"Talk to a lawyer\" button below to send an enquiry."
+    },
+    {
+      "sample": 3,
+      "id": "h01",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "One of our lawyers can help with this.\n\nMost residential tenancies in Lagos State are governed by the Tenancy Law of Lagos State 2011, which sets rules on how a landlord may lawfully recover possession. A notice to quit ends the tenancy but does not give the landlord the right to lock the tenant out. Under the law, if the tenant stays after the notice to quit expires, the landlord must serve a written notice of the owner's intention to recover possession, giving at least seven days' notice, and only after that can the landlord apply to court.\n\nThis is a matter for a lawyer who can review what happened in your case. Please send an enquiry using the \"Talk to a lawyer\" button below, and one of our lawyers will contact you."
+    },
+    {
+      "sample": 3,
+      "id": "h02",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "One of our lawyers can help with this.\n\nFor a yearly tenant, the law sets a minimum of six months' notice. If your tenancy agreement sets a notice period, that agreed period normally applies. The type of tenancy is decided by when the rent is paid or demanded—a tenant who pays rent once a year is usually a yearly tenant.\n\nWhether you have a case depends on the terms of your agreement and the specific facts of your situation. Please send an enquiry using the \"Talk to a lawyer\" button below, and one of our lawyers can review your tenancy agreement and advise you."
+    },
+    {
+      "sample": 3,
+      "id": "h03",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "One of our lawyers can help with this. The firm works on trademark registration and enforcement, and we reply to every enquiry within one working day, and after a conflict check, a lawyer from the relevant practice area will contact you.\n\nTo get started, please send an enquiry using the \"Talk to a lawyer\" button below."
+    },
+    {
+      "sample": 3,
+      "id": "h04",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "One of our lawyers can help with this.\n\nSmall companies that fall below the turnover and fixed-asset thresholds set in the Act pay companies income tax at 0 percent. However, companies that provide professional services cannot use this small-company relief, even if they are below the thresholds. A design consultancy would likely be considered a professional services company, so the small-company relief may not apply to you.\n\nTo understand what rate applies to your specific situation and how your turnover relates to the thresholds, please send an enquiry using the \"Talk to a lawyer\" button below, and one of our team can advise you further."
+    },
+    {
+      "sample": 3,
+      "id": "h05",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "One of our lawyers can help with this.\n\nThis sounds like it could involve breach of contract, confidentiality obligations, or other commercial disputes. Kendot Legal's Dispute Resolution team acts in contract disputes, and they may be able to advise you on your options.\n\nPlease send an enquiry using the \"Talk to a lawyer\" button below, and mention that this is urgent. If a deadline is less than seven days away, please say so in your first message, or call the Lagos office directly so that we can prioritise it."
+    },
+    {
+      "sample": 3,
+      "id": "h06",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "One of our lawyers can help with this.\n\nThe firm acts in debt recovery cases in the State and Federal High Courts, and can send letters of demand and bring summary judgment and undefended list proceedings. Before starting proceedings, the firm gives each client an honest assessment of the prospects, the likely cost and the time involved.\n\nTo discuss your situation and get that assessment, please send an enquiry using the \"Talk to a lawyer\" button below."
+    },
+    {
+      "sample": 3,
+      "id": "i03",
+      "passed": true,
+      "outcome": "handoff",
+      "text": "I can't answer that from the information on this website.\n\nHowever, one of our lawyers can help with this. Please use the \"Talk to a lawyer\" button below to send an enquiry about your situation."
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import InsightCard from '../components/InsightCard.astro';
+import { SITE } from '../site';
+
+const practice = (await getCollection('practice')).sort((a, b) => a.data.order - b.data.order);
+const practiceTitle = Object.fromEntries(practice.map((p) => [p.id, p.data.title]));
+const latest = (await getCollection('insights'))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 3);
+---
+
+<Layout>
+  <!-- Hero -->
+  <section class="bg-ink text-paper">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 py-20 sm:py-28 grid gap-12 lg:grid-cols-[1.4fr_1fr] items-end">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brass">Lagos &middot; Abuja</p>
+        <h1 class="mt-5 text-4xl sm:text-6xl font-semibold leading-[1.08]">{SITE.tagline}.</h1>
+        <p class="mt-6 text-lg text-paper/75 max-w-xl leading-relaxed">
+          We advise businesses, investors, landlords and tenants on corporate matters, property, tax, intellectual property, data protection and disputes. Every new matter is supervised by a partner.
+        </p>
+        <div class="mt-9 flex flex-wrap gap-3">
+          <a href="/contact/" class="rounded-sm bg-brass px-6 py-3 font-medium text-ink hover:bg-paper transition-colors">Book a consultation</a>
+          <a href="/practice/" class="rounded-sm border border-paper/30 px-6 py-3 font-medium hover:border-paper transition-colors">Our practice areas</a>
+        </div>
+      </div>
+      <div class="rounded-sm border border-paper/15 bg-white/5 p-6">
+        <p class="font-serif text-xl">Have a quick question?</p>
+        <p class="mt-2 text-sm text-paper/70 leading-relaxed">
+          Our assistant answers general questions from the articles and guides on this website, and shows you where each answer comes from. It does not give legal advice.
+        </p>
+        <button type="button" data-open-assistant class="mt-5 rounded-sm border border-brass px-4 py-2 text-sm font-medium text-brass hover:bg-brass hover:text-ink transition-colors">Ask the assistant</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Practice areas -->
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 py-20">
+    <div class="flex items-end justify-between gap-6 flex-wrap">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-brass-deep">What we do</p>
+        <h2 class="mt-3 text-3xl sm:text-4xl font-semibold">Practice areas</h2>
+      </div>
+      <a href="/practice/" class="text-sm font-medium underline underline-offset-4 decoration-brass">View all practice areas</a>
+    </div>
+    <div class="mt-10 grid gap-px bg-line border border-line sm:grid-cols-2 lg:grid-cols-3">
+      {practice.map((p, i) => (
+        <a href={`/practice/${p.id}/`} class="group bg-paper p-7 hover:bg-white transition-colors">
+          <p class="font-serif text-brass-deep text-sm">0{i + 1}</p>
+          <h3 class="mt-3 text-xl font-semibold group-hover:underline underline-offset-4 decoration-brass">{p.data.title}</h3>
+          <p class="mt-3 text-sm text-muted leading-relaxed">{p.data.summary}</p>
+        </a>
+      ))}
+      <a href="/contact/" class="bg-ink text-paper p-7 flex flex-col justify-between hover:bg-ink-soft transition-colors">
+        <h3 class="text-xl font-semibold">Not sure where your matter fits?</h3>
+        <p class="mt-6 text-sm text-paper/75">Tell us briefly what you need and we will reply within one working day.</p>
+      </a>
+    </div>
+  </section>
+
+  <!-- Why us -->
+  <section class="border-y border-line bg-white/60">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 py-16 grid gap-10 md:grid-cols-3">
+      {[
+        ['Plain language', 'We explain your position and your options clearly, without jargon.'],
+        ['Cost agreed upfront', 'You receive a written engagement letter with the scope and estimated cost before any work starts.'],
+        ['Honest about litigation', 'If settling serves you better than going to court, we tell you early.'],
+      ].map(([t, d]) => (
+        <div class="border-l-2 border-brass pl-5">
+          <h3 class="text-lg font-semibold">{t}</h3>
+          <p class="mt-2 text-sm text-muted leading-relaxed">{d}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Latest insights -->
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 py-20">
+    <div class="flex items-end justify-between gap-6 flex-wrap">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-brass-deep">Insights</p>
+        <h2 class="mt-3 text-3xl sm:text-4xl font-semibold">Latest guides</h2>
+      </div>
+      <a href="/insights/" class="text-sm font-medium underline underline-offset-4 decoration-brass">All insights</a>
+    </div>
+    <div class="mt-10 grid gap-6 md:grid-cols-3">
+      {latest.map((post) => <InsightCard post={post} practiceTitle={practiceTitle[post.data.practice]} />)}
+    </div>
+  </section>
+</Layout>

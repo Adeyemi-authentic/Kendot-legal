@@ -1,0 +1,33 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* Brand tokens: swap these per client (colours + fonts are the whole rebrand). */
+@theme {
+  --color-ink: #13212f;        /* primary: deep navy */
+  --color-ink-soft: #2b3b4c;
+  --color-brass: #c9a36b;      /* accent: on dark backgrounds, buttons, borders */
+  --color-brass-deep: #7a5a2b; /* accent text on light backgrounds (AA contrast) */
+  --color-brass-soft: #f3ece0;
+  --color-paper: #faf8f4;      /* page background */
+  --color-line: #e6e0d6;       /* hairlines */
+  --color-muted: #5a6572;      /* secondary text */
+
+  --font-serif: "Source Serif 4 Variable", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body { @apply bg-paper text-ink font-sans antialiased; }
+  h1, h2, h3 { @apply font-serif; text-wrap: balance; }
+  :focus-visible { outline: 2px solid var(--color-brass); outline-offset: 3px; }
+}
+
+/* Long-form content (insights, practice pages) */
+.prose-kendot {
+  @apply prose prose-lg max-w-none
+    prose-headings:font-serif prose-headings:text-ink prose-headings:font-semibold
+    prose-p:text-ink-soft prose-li:text-ink-soft
+    prose-a:text-ink prose-a:underline-offset-4 prose-a:decoration-brass
+    prose-strong:text-ink;
+}

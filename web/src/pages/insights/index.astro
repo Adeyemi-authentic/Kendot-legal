@@ -1,0 +1,17 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import InsightCard from '../../components/InsightCard.astro';
+
+const practice = await getCollection('practice');
+const practiceTitle = Object.fromEntries(practice.map((p) => [p.id, p.data.title]));
+const posts = (await getCollection('insights')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<Layout title="Insights" description="Plain-language guides from Kendot Legal on tenancy, tax, company law, data protection, trademarks and your rights.">
+  <PageHeader eyebrow="Insights" title="Guides and updates" summary="Plain-language explanations of the laws our clients ask about most. General information, not legal advice." />
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 py-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    {posts.map((post) => <InsightCard post={post} practiceTitle={practiceTitle[post.data.practice]} />)}
+  </div>
+</Layout>

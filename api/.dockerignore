@@ -1,0 +1,16 @@
+# Keep secrets, local-only state, and dev cruft out of the image.
+.env
+.venv/
+.git/
+__pycache__/
+*.pyc
+
+# Local Qdrant index -- production builds the pgvector store instead.
+rag/index_data/
+
+# Local eval cache and docs bundle not needed at runtime.
+rag/eval_cache.json
+docs/
+
+# Local enquiries (dev). Production stores leads in Postgres.
+rag/leads.sqlite

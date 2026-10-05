@@ -57,6 +57,7 @@ from chat import (                                             # noqa: E402
 )
 from contextualize import contextualize                        # noqa: E402
 from leads import LeadStore                                    # noqa: E402
+from voyage_client import VoyageBusy, set_max_wait            # noqa: E402
 
 ENGINE = os.environ.get("ENGINE", "qdrant").lower()
 if ENGINE == "pg":
@@ -78,6 +79,7 @@ CHAT_RATE_WINDOW = float(os.environ.get("CHAT_RATE_WINDOW", "60"))   # ... per N
 INTAKE_RATE_LIMIT = int(os.environ.get("INTAKE_RATE_LIMIT", "5"))
 INTAKE_RATE_WINDOW = float(os.environ.get("INTAKE_RATE_WINDOW", "3600"))
 DAILY_BUDGET_USD = float(os.environ.get("DAILY_BUDGET_USD", "1.00"))
+VOYAGE_MAX_WAIT = float(os.environ.get("VOYAGE_MAX_WAIT", "8"))   # seconds of 429 backoff per call
 # Behind Render/Vercel the client IP arrives in X-Forwarded-For. Only trust that
 # header when a proxy we control sets it, or anyone could spoof their IP.
 TRUST_PROXY = os.environ.get("TRUST_PROXY", "0") == "1"
@@ -262,6 +264,7 @@ def chat_gate(_rl: None = Depends(chat_guard)) -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print(f"[startup] retrieval store: {ENGINE}", file=sys.stderr)
+    set_max_wait(VOYAGE_MAX_WAIT)       # live requests: fail fast to a "busy" message
     app.state.engine = Engine()
     app.state.engine._load()            # build the BM25 cache now, not on the first question
     app.state.client = anthropic.Anthropic()
@@ -292,6 +295,15 @@ async def _validation_error(request: Request, exc: RequestValidationError):
     msg = str(first.get("msg", "Invalid request.")).removeprefix("Value error, ")
     field = ".".join(str(x) for x in first.get("loc", ())[1:]) or None
     return JSONResponse(status_code=422, content={"error": msg, "field": field})
+
+
+BUSY_MSG = ("The assistant is busy right now. Please try again in a minute, "
+            "or use the contact page to reach a lawyer.")
+
+
+@app.exception_handler(VoyageBusy)
+async def _voyage_busy(request: Request, exc: VoyageBusy):
+    return JSONResponse(status_code=503, content={"error": BUSY_MSG})
 
 
 @app.exception_handler(Exception)
@@ -366,6 +378,9 @@ def stream_pipeline(engine, client, query):
         if not streamed.strip():
             yield _sse({"type": "token", "text": r["text"]})   # empty reply -> DONT_KNOW
         yield _done(r)
+    except VoyageBusy:
+        print("[WARN] stream: Voyage rate limit", file=sys.stderr)
+        yield _sse({"type": "error", "error": BUSY_MSG})
     except Exception as exc:                       # noqa: BLE001 -- report, don't crash the stream
         print(f"[ERROR] stream: {type(exc).__name__}: {exc}", file=sys.stderr)
         yield _sse({"type": "error", "error": "Sorry, something went wrong. Please try again."})

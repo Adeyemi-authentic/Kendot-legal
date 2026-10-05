@@ -1,0 +1,36 @@
+# Render Blueprint: the website assistant API (api/Dockerfile).
+# Render > New > Blueprint > pick this repo. Values marked sync: false are
+# asked for once in the dashboard and never stored in git.
+services:
+  - type: web
+    name: kendot-assistant
+    runtime: docker
+    rootDir: api
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: ohio                 # same AWS region as the Neon database (us-east-2)
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: VOYAGE_API_KEY
+        sync: false
+      - key: DATABASE_URL        # Neon DIRECT connection string (not the -pooler one)
+        sync: false
+      - key: API_KEY             # admin key for /admin/*
+        generateValue: true
+      - key: ALLOWED_ORIGINS     # the Vercel site URL, e.g. https://kendot-legal.vercel.app
+        sync: false
+      - key: ENGINE
+        value: pg
+      - key: CHUNKS_TABLE
+        value: kendot_chunks
+      - key: LEADS_TABLE
+        value: kendot_leads
+      - key: TRUST_PROXY
+        value: "1"
+      - key: DAILY_BUDGET_USD
+        value: "1.00"
+      - key: VOYAGE_MAX_WAIT
+        value: "8"

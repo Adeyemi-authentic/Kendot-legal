@@ -26,6 +26,20 @@ _BASE = "https://api.voyageai.com/v1"
 # to each call (Phase 5: 1.5s -> 0.45s), and every question makes two calls.
 _session = requests.Session()
 
+# Total seconds _post may spend backing off on 429s. None = keep retrying (builds,
+# eval). The live API sets a short cap so a visitor gets a "busy" message in a few
+# seconds instead of a spinner for minutes (the free tier allows ~3 requests/min).
+_max_wait = None
+
+
+class VoyageBusy(RuntimeError):
+    """Voyage kept rate-limiting us past the allowed wait."""
+
+
+def set_max_wait(seconds):
+    global _max_wait
+    _max_wait = seconds
+
 
 def _key() -> str:
     key = os.getenv("VOYAGE_API_KEY")
@@ -46,6 +60,7 @@ def _post(path, payload, timeout, max_retries=8):
         "Authorization": f"Bearer {_key()}",
         "Content-Type": "application/json",
     }
+    waited = 0.0
     for attempt in range(max_retries):
         last = attempt == max_retries - 1
         try:
@@ -57,11 +72,14 @@ def _post(path, payload, timeout, max_retries=8):
             print(f"  (connection error: {type(e).__name__}; waiting {wait:.0f}s then retrying...)")
             time.sleep(wait)
             continue
-        if resp.status_code == 429 and not last:
+        if resp.status_code == 429:
             # Respect Retry-After if given, else exponential backoff capped at 60s.
             wait = min(float(resp.headers.get("Retry-After", 2 ** attempt + 1)), 60.0)
+            if last or (_max_wait is not None and waited + wait > _max_wait):
+                raise VoyageBusy("Voyage rate limit")
             print(f"  (rate limited; waiting {wait:.0f}s then retrying...)")
             time.sleep(wait)
+            waited += wait
             continue
         resp.raise_for_status()
         return resp.json()

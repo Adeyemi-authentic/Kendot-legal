@@ -1,10 +1,12 @@
 ---
 name: Halima Sani
 role: Partner
-practices: [tax]
+practices: [tax, real-estate-tenancy]
 order: 3
 ---
 
 *Fictional profile for a concept build.*
 
 Halima Sani leads the Tax practice from the Abuja office. Halima advises companies and individuals on the Nigeria Tax Act 2025 and the Nigeria Tax Administration Act 2025, and represents clients in tax disputes, including at the Tax Appeal Tribunal.
+
+Halima also advises on property purchases, employment matters (including terminations and workplace disputes) and estate administration, and works on related civil disputes.

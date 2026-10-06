@@ -37,4 +37,4 @@ We reply to all enquiries within one working day.
 
 ## Do you handle divorce, criminal cases or immigration?
 
-No. Kendot Legal does not handle family law (divorce, child custody or adoption), criminal defence (defending someone charged with a crime) or immigration and visa applications. For these matters, we suggest contacting the Nigerian Bar Association branch in your area, which can refer you to a lawyer who handles them.
+No. Kendot Legal does not handle family law (divorce, child custody or adoption), criminal defence (defending someone charged with a crime) or immigration and visa applications. For these matters, we suggest contacting the Nigerian Bar Association branch in your area, which can refer you to a lawyer who handles them. We do advise on estate administration: dealing with and distributing a person's property after their death. That work sits in our Real Estate and Tenancy practice.

@@ -19,7 +19,7 @@ Our clients include small and medium-sized businesses, start-ups, property owner
 
 ## What we do not handle
 
-Kendot Legal does not handle criminal defence, family law (divorce, custody or adoption), or immigration applications. If your matter falls in one of these areas, we are happy to suggest that you contact the Nigerian Bar Association branch in your area for a referral.
+Kendot Legal does not handle criminal defence, family law (divorce, custody or adoption), or immigration applications. If your matter falls in one of these areas, we are happy to suggest that you contact the Nigerian Bar Association branch in your area for a referral. We do advise on estate administration: dealing with and distributing a person's property after their death. That work sits in our Real Estate and Tenancy practice.
 
 ## Our offices
 

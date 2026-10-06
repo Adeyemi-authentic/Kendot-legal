@@ -13,7 +13,7 @@ Our Corporate and Commercial team advises start-ups, growing companies and forei
 - **Commercial contracts:** we draft and review supply, distribution, service, agency and technology agreements, plus non-disclosure agreements and terms and conditions.
 - **Foreign investment:** we advise on setting up a Nigerian subsidiary, registering with the Nigerian Investment Promotion Commission, and obtaining a Certificate of Capital Importation.
 - **Mergers and acquisitions:** we carry out legal due diligence and draft share purchase and shareholders' agreements for small and mid-sized transactions.
-- **Employment:** we draft employment contracts, staff handbooks and exit agreements.
+- **Employment:** we draft employment contracts, staff handbooks and exit agreements, and advise employers and executives on terminations, restrictive covenants and workplace disputes.
 
 ## Who leads this practice
 

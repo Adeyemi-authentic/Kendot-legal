@@ -11,6 +11,7 @@ Our Real Estate and Tenancy team acts for landlords, tenants, property developer
 - **Property transactions:** we investigate title and search land registries, draft deeds of assignment and handle perfection of title, including applications for the Governor's consent.
 - **Leases and tenancy agreements:** we draft and review residential and commercial leases, and we explain rent, service charge and renewal terms.
 - **Landlord and tenant disputes:** we prepare and serve notices to quit and notices of owner's intention to recover possession, bring recovery of premises actions, and defend unlawful eviction claims.
+- **Estate administration:** we advise executors and families on administering and distributing property after a death, including reviewing wills and the title documents for each property.
 - **Mediation:** many tenancy disputes can be resolved through mediation or arbitration before a matter goes to court, which is often faster and cheaper. We represent clients in these processes.
 
 ## Lagos Tenancy Law 2011
@@ -19,7 +20,7 @@ Most residential and commercial tenancies in Lagos State are governed by the Ten
 
 ## Who leads this practice
 
-The practice is led by Tomi Kendot, Managing Partner, and supported by Bayo Adewale, Associate.
+The practice is led by Tomi Kendot, Managing Partner, and supported by Halima Sani, Partner, and Bayo Adewale, Associate.
 
 ## Related insights
 

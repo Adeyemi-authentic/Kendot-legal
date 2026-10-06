@@ -15,3 +15,4 @@ node_modules/
 web/dist/
 web/.astro/
 eval/results/latest.json
+api/rag/index_internal/

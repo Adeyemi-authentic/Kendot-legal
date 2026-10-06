@@ -134,7 +134,8 @@ const starters = [
 </div>
 
 <script>
-  type Source = { title: string; url: string | null };
+  import { format, streamChat, type Source } from '../lib/chat';
+
   type Kind = 'answer' | 'handoff' | 'refused' | 'error' | 'notice';
   type Msg = { role: 'user' | 'assistant'; text: string; sources?: Source[]; kind?: Kind };
 
@@ -176,25 +177,6 @@ const starters = [
   if ('requestIdleCallback' in window) requestIdleCallback(warm); else setTimeout(warm, 1000);
 
   // --- rendering ---------------------------------------------------------
-  function esc(s: string) {
-    return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
-  }
-  function inline(s: string) {
-    return esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  }
-  /** Minimal, safe formatting: paragraphs, bullet/numbered lists, bold. */
-  function format(text: string) {
-    return text.trim().split(/\n{2,}/).map((block) => {
-      const lines = block.split('\n').filter((l) => l.trim());
-      if (lines.length && lines.every((l) => /^\s*(?:[-*•]|\d+[.)])\s+/.test(l))) {
-        const ordered = /^\s*\d/.test(lines[0]);
-        const items = lines.map((l) => `<li>${inline(l.replace(/^\s*(?:[-*•]|\d+[.)])\s+/, ''))}</li>`).join('');
-        return ordered ? `<ol class="list-decimal pl-5 space-y-1">${items}</ol>` : `<ul class="list-disc pl-5 space-y-1">${items}</ul>`;
-      }
-      return `<p>${lines.map(inline).join('<br>')}</p>`;
-    }).join('');
-  }
-
   function bubble(msg: Msg): HTMLElement {
     const wrap = document.createElement('div');
     if (msg.role === 'user') {
@@ -332,38 +314,16 @@ const starters = [
     }, 5000);
 
     try {
-      const res = await fetch(`${API}/chat/stream`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, history: prior }),
-      });
-      if (!res.ok || !res.body) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Sorry, something went wrong. Please try again.');
-      }
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = '';
-      for (;;) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        let cut;
-        while ((cut = buf.indexOf('\n\n')) !== -1) {
-          const line = buf.slice(0, cut).trim();
-          buf = buf.slice(cut + 2);
-          if (!line.startsWith('data:')) continue;
-          const ev = JSON.parse(line.slice(5));
-          if (ev.type === 'token') {
-            reply.text += ev.text;
-            setText(wrap, reply.text);
-            scrollDown();
-          } else if (ev.type === 'done') {
-            reply.kind = ev.handoff ? 'handoff' : ev.refused ? 'refused' : 'answer';
-            reply.sources = ev.sources || [];
-          } else if (ev.type === 'error') {
-            throw new Error(ev.error);
-          }
+      for await (const ev of streamChat(`${API}/chat/stream`, { question, history: prior })) {
+        if (ev.type === 'token') {
+          reply.text += ev.text;
+          setText(wrap, reply.text);
+          scrollDown();
+        } else if (ev.type === 'done') {
+          reply.kind = ev.handoff ? 'handoff' : ev.refused ? 'refused' : 'answer';
+          reply.sources = ev.sources || [];
+        } else if (ev.type === 'error') {
+          throw new Error(ev.error);
         }
       }
       if (!reply.text) throw new Error('Sorry, something went wrong. Please try again.');

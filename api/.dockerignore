@@ -7,6 +7,7 @@ __pycache__/
 
 # Local Qdrant index -- production builds the pgvector store instead.
 rag/index_data/
+rag/index_internal/
 
 # Local eval cache and docs bundle not needed at runtime.
 rag/eval_cache.json
@@ -14,3 +15,7 @@ docs/
 
 # Local enquiries (dev). Production stores leads in Postgres.
 rag/leads.sqlite
+
+# Internal documents: production reads them from the pgvector table, so the
+# image carries only their titles (internal_docs/sources.json), never the text.
+rag/internal_docs/*.md

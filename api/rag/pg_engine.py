@@ -53,10 +53,11 @@ class PgRetrievalEngine(RetrievalEngine):
     Only storage methods are overridden; hybrid()/search()/rerank are inherited.
     """
 
-    def __init__(self, dsn=None):
+    def __init__(self, dsn=None, table=TABLE):
         self.dsn = dsn or os.environ["DATABASE_URL"]
+        self.table = table
         self._open()
-        self.collection = TABLE
+        self.collection = table
         # same corpus-cache slots the parent uses (filled lazily by _load)
         self._ids = self._sources = self._texts = self._bm25 = None
 
@@ -129,21 +130,21 @@ class PgRetrievalEngine(RetrievalEngine):
         """
         with self.conn.cursor() as cur:
             if rebuild:
-                cur.execute(f"DROP TABLE IF EXISTS {TABLE}")
-                print(f"Dropped '{TABLE}' for rebuild.")
+                cur.execute(f"DROP TABLE IF EXISTS {self.table}")
+                print(f"Dropped '{self.table}' for rebuild.")
             cur.execute(f"""
-                CREATE TABLE IF NOT EXISTS {TABLE} (
+                CREATE TABLE IF NOT EXISTS {self.table} (
                     id          INT PRIMARY KEY,
                     source      TEXT NOT NULL,
                     chunk_text  TEXT NOT NULL,
                     embedding   vector({VECTOR_SIZE})
                 )
             """)
-            cur.execute(f"SELECT count(*) FROM {TABLE}")
+            cur.execute(f"SELECT count(*) FROM {self.table}")
             existing = cur.fetchone()[0]
         self.conn.commit()          # release the transaction before the long embed
         if existing:
-            print(f"Index already built: '{TABLE}' has {existing} chunks.")
+            print(f"Index already built: '{self.table}' has {existing} chunks.")
             return
 
         records, n_docs = build_records(docs_dir)   # same chunks as the Qdrant build
@@ -156,11 +157,11 @@ class PgRetrievalEngine(RetrievalEngine):
         with self.conn.cursor() as cur:
             for i, ((source, chunk), vec) in enumerate(zip(records, vectors)):
                 cur.execute(
-                    f"INSERT INTO {TABLE} (id, source, chunk_text, embedding) VALUES (%s, %s, %s, %s)",
+                    f"INSERT INTO {self.table} (id, source, chunk_text, embedding) VALUES (%s, %s, %s, %s)",
                     (i, source, chunk, np.array(vec, dtype=np.float32)),
                 )
         self.conn.commit()
-        print(f"Stored {len(records)} chunks in pgvector table '{TABLE}'.")
+        print(f"Stored {len(records)} chunks in pgvector table '{self.table}'.")
         # NOTE: no ANN index (e.g. HNSW) on purpose -- with ~50 chunks an exact
         # scan is instant AND gives EXACT nearest neighbours, which is what the
         # parity test needs. A production corpus would add an HNSW index here.
@@ -173,7 +174,7 @@ class PgRetrievalEngine(RetrievalEngine):
         """
         if self._ids is not None:
             return
-        rows = self._query(f"SELECT id, source, chunk_text FROM {TABLE} ORDER BY id")
+        rows = self._query(f"SELECT id, source, chunk_text FROM {self.table} ORDER BY id")
         self._ids = [r[0] for r in rows]
         self._sources = {r[0]: r[1] for r in rows}
         self._texts = {r[0]: r[2] for r in rows}
@@ -189,7 +190,7 @@ class PgRetrievalEngine(RetrievalEngine):
         """
         qv, _ = embed([query], input_type="query")
         rows = self._query(
-            f"SELECT id FROM {TABLE} ORDER BY embedding <=> %s",
+            f"SELECT id FROM {self.table} ORDER BY embedding <=> %s",
             (np.array(qv[0], dtype=np.float32),),
         )
         return [r[0] for r in rows]

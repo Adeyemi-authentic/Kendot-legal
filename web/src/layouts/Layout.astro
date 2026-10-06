@@ -8,8 +8,10 @@ import ChatWidget from '../components/ChatWidget.astro';
 interface Props {
   title?: string;
   description?: string;
+  /** Staff-only page: keep it out of search engines and drop the public assistant. */
+  internal?: boolean;
 }
-const { title, description = SITE.description } = Astro.props;
+const { title, description = SITE.description, internal = false } = Astro.props;
 const pageTitle = title ? `${title} | ${SITE.name}` : `${SITE.name}: ${SITE.tagline}`;
 const path = Astro.url.pathname;
 const year = new Date().getFullYear();
@@ -22,6 +24,7 @@ const year = new Date().getFullYear();
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
+    {internal && <meta name="robots" content="noindex, nofollow" />}
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
@@ -95,7 +98,7 @@ const year = new Date().getFullYear();
       </div>
     </footer>
 
-    <ChatWidget />
+    {!internal && <ChatWidget />}
 
     <script>
       const btn = document.getElementById('menu-btn');

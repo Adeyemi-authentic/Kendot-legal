@@ -99,30 +99,30 @@ def cost_of(usage):
     return usage.input_tokens * PRICE_IN + usage.output_tokens * PRICE_OUT
 
 
-def page_of(source):
+def page_of(source, manifest=MANIFEST):
     """(title, url) of the website page a corpus file came from."""
-    entry = MANIFEST.get(source, {})
+    entry = manifest.get(source, {})
     return entry.get("title", source), entry.get("url")
 
 
-def build_documents(passages):
+def build_documents(passages, manifest=MANIFEST):
     """Each passage becomes a citable `document` block titled with its page."""
     return [
         {
             "type": "document",
             "source": {"type": "text", "media_type": "text/plain", "data": text},
-            "title": page_of(source)[0],
+            "title": page_of(source, manifest)[0],
             "citations": {"enabled": True},
         }
         for _pid, _score, source, text in passages
     ]
 
 
-def messages_for(query, passages):
+def messages_for(query, passages, manifest=MANIFEST, asker="Visitor"):
     return [{
         "role": "user",
-        "content": build_documents(passages) + [
-            {"type": "text", "text": f"Visitor's question: {query}"}
+        "content": build_documents(passages, manifest) + [
+            {"type": "text", "text": f"{asker}'s question: {query}"}
         ],
     }]
 
@@ -165,13 +165,18 @@ def classify(text):
     return handoff, refused and not handoff
 
 
-def finish(response, passages, top_score):
-    """Turn the final model message into the result dict."""
-    text, citations, cited_chars, total_chars = _parse(response, passages)
+def finish(response, passages, top_score, manifest=MANIFEST, dont_know=DONT_KNOW,
+           classify_fn=classify):
+    """Turn the final model message into the result dict.
+
+    manifest, dont_know and classify_fn default to the public website assistant;
+    the internal assistant (internal.py) passes its own.
+    """
+    text, citations, cited_chars, total_chars = _parse(response, passages, manifest)
     if not text.strip():
         # Seen once in Phase 5: an empty reply. Never show the visitor a blank bubble.
-        text, citations = DONT_KNOW, []
-    handoff, refused = classify(text)
+        text, citations = dont_know, []
+    handoff, refused = classify_fn(text)
     coverage = (cited_chars / total_chars) if total_chars else 0.0
     # Only a confident answer needs grounding; a refusal or handoff may be uncited.
     flagged = not (refused or handoff) and coverage < COVERAGE_FLOOR
@@ -203,7 +208,7 @@ def answer(engine, client, query, meter=None):
     return finish(response, passages, top_score)
 
 
-def _parse(response, passages):
+def _parse(response, passages, manifest=MANIFEST):
     """Answer text + verified citation spans, each linked to its page.
 
     Returns (answer_text, citations, cited_chars, total_chars). Each citation is
@@ -220,7 +225,7 @@ def _parse(response, passages):
         if cites:
             cited_chars += len(block.text)
             for c in cites:
-                title, url = page_of(passages[c.document_index][2])
+                title, url = page_of(passages[c.document_index][2], manifest)
                 citations.append({
                     "n": c.document_index + 1,
                     "title": title,

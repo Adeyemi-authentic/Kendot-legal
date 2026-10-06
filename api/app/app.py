@@ -6,6 +6,9 @@
     POST   /intake              lawyer-handoff enquiry form                   public
     GET    /admin/leads         recent enquiries                              X-API-Key
     DELETE /admin/leads/{id}    erase one enquiry (NDPA erasure request)      X-API-Key
+    POST   /internal/login      password -> signed session token (8 hours)    INTERNAL_PASSWORD
+    GET    /internal/session    is this token still valid?                    Bearer token
+    POST   /internal/chat/stream  the firm's internal documents, streamed     Bearer token
 
 The public routes are called from visitors' browsers, so they cannot hold a
 secret: any key in the widget would be visible to everyone. They are protected
@@ -17,6 +20,12 @@ instead by:
                               chat returns 503 and points visitors to the contact page
 Admin routes keep API-key auth.
 
+The internal assistant (rag/internal.py) answers from the firm's own precedents
+and procedures. It has its own store, opened as a separate engine object; the
+public routes only ever use app.state.engine, so they cannot reach it. Its routes
+need a session token from /internal/login, and are switched off (404) unless
+INTERNAL_PASSWORD is set.
+
 The retrieval store is chosen by ENGINE: qdrant (local files, dev) or pg (pgvector
 over DATABASE_URL, production). Leads follow the same switch (SQLite or Postgres).
 
@@ -24,6 +33,7 @@ Run:  uvicorn app:app --reload --port 8000        (from the app/ folder)
 """
 
 import hashlib
+import hmac
 import json
 import os
 import pathlib
@@ -38,7 +48,7 @@ from urllib.parse import quote
 
 import anthropic
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Header, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -58,6 +68,7 @@ from chat import (                                             # noqa: E402
 from contextualize import contextualize                        # noqa: E402
 from leads import LeadStore                                    # noqa: E402
 from voyage_client import VoyageBusy, set_max_wait            # noqa: E402
+import internal                                                # noqa: E402
 
 ENGINE = os.environ.get("ENGINE", "qdrant").lower()
 if ENGINE == "pg":
@@ -83,6 +94,17 @@ VOYAGE_MAX_WAIT = float(os.environ.get("VOYAGE_MAX_WAIT", "8"))   # seconds of 4
 # Behind Render/Vercel the client IP arrives in X-Forwarded-For. Only trust that
 # header when a proxy we control sets it, or anyone could spoof their IP.
 TRUST_PROXY = os.environ.get("TRUST_PROXY", "0") == "1"
+# Internal assistant. No password set = the internal routes do not exist (404).
+INTERNAL_PASSWORD = os.environ.get("INTERNAL_PASSWORD", "")
+INTERNAL_ENABLED = bool(INTERNAL_PASSWORD)
+# Signs session tokens. Falls back to a key derived from API_KEY, so a deploy
+# that forgets it still works; set it to sign out every session at once.
+INTERNAL_SECRET = os.environ.get("INTERNAL_SECRET") or hmac.new(
+    API_KEY.encode(), b"internal-session", hashlib.sha256).hexdigest()
+INTERNAL_SESSION_HOURS = float(os.environ.get("INTERNAL_SESSION_HOURS", "8"))
+INTERNAL_DAILY_BUDGET_USD = float(os.environ.get("INTERNAL_DAILY_BUDGET_USD", "1.00"))
+LOGIN_RATE_LIMIT = int(os.environ.get("LOGIN_RATE_LIMIT", "5"))        # attempts per IP ...
+LOGIN_RATE_WINDOW = float(os.environ.get("LOGIN_RATE_WINDOW", "900"))  # ... per 15 minutes
 FIRM_WHATSAPP = "".join(ch for ch in os.environ.get("FIRM_WHATSAPP", "+234 700 000 0003")
                         if ch.isdigit())
 
@@ -171,6 +193,10 @@ class IntakeRequest(BaseModel):
         return self
 
 
+class LoginRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=200)
+
+
 class IntakeResponse(BaseModel):
     ok: bool
     reference: str
@@ -251,8 +277,11 @@ class Budget:
 
 
 budget = Budget(DAILY_BUDGET_USD)
+internal_budget = Budget(INTERNAL_DAILY_BUDGET_USD)    # lawyers are not starved by public traffic
 chat_guard = rate_limit("chat", CHAT_RATE_LIMIT, CHAT_RATE_WINDOW)
 intake_guard = rate_limit("intake", INTAKE_RATE_LIMIT, INTAKE_RATE_WINDOW)
+login_guard = rate_limit("login", LOGIN_RATE_LIMIT, LOGIN_RATE_WINDOW)
+internal_chat_guard = rate_limit("internal-chat", CHAT_RATE_LIMIT, CHAT_RATE_WINDOW)
 
 
 def chat_gate(_rl: None = Depends(chat_guard)) -> None:
@@ -260,7 +289,59 @@ def chat_gate(_rl: None = Depends(chat_guard)) -> None:
     budget.check()
 
 
+# --- Lock: internal sessions ----------------------------------------------
+# A token is "<expiry>.<HMAC of the expiry>". Stateless: nothing to store, and
+# the password's hash is in the signed message, so changing INTERNAL_PASSWORD
+# signs everyone out.
+def _sign(expiry: int) -> str:
+    pw = hashlib.sha256(INTERNAL_PASSWORD.encode()).hexdigest()
+    return hmac.new(INTERNAL_SECRET.encode(), f"internal:{expiry}:{pw}".encode(),
+                    hashlib.sha256).hexdigest()
+
+
+def issue_token() -> tuple[str, int]:
+    expiry = int(time.time() + INTERNAL_SESSION_HOURS * 3600)
+    return f"{expiry}.{_sign(expiry)}", expiry
+
+
+def internal_on() -> None:
+    if not INTERNAL_ENABLED:
+        raise ApiError(404, "Not Found")
+
+
+def require_internal(_on: None = Depends(internal_on),
+                     authorization: str | None = Header(default=None)) -> None:
+    token = (authorization or "").removeprefix("Bearer ").strip()
+    expiry, _, sig = token.partition(".")
+    if not (expiry.isdigit() and secrets.compare_digest(sig, _sign(int(expiry)))
+            and int(expiry) > time.time()):
+        raise ApiError(401, "Please sign in again.")
+
+
+def internal_gate(_auth: None = Depends(require_internal),
+                  _rl: None = Depends(internal_chat_guard)) -> None:
+    internal_budget.check()
+
+
 # --- App -------------------------------------------------------------------
+def open_internal_engine():
+    """The internal store, or None (switched off, or not built yet).
+
+    A missing internal index must never take the public assistant down with it.
+    """
+    if not INTERNAL_ENABLED:
+        return None
+    try:
+        eng = internal.make_engine(ENGINE)
+        eng._load()
+        print(f"[startup] internal store: {eng.collection}", file=sys.stderr)
+        return eng
+    except (Exception, SystemExit) as exc:          # noqa: BLE001
+        print(f"[WARN] internal assistant unavailable: {type(exc).__name__}: {exc}",
+              file=sys.stderr)
+        return None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print(f"[startup] retrieval store: {ENGINE}", file=sys.stderr)
@@ -269,8 +350,11 @@ async def lifespan(app: FastAPI):
     app.state.engine._load()            # build the BM25 cache now, not on the first question
     app.state.client = anthropic.Anthropic()
     app.state.leads = LeadStore()
+    app.state.internal_engine = open_internal_engine()
     yield
     app.state.engine.close()
+    if app.state.internal_engine:
+        app.state.internal_engine.close()
 
 
 app = FastAPI(title=f"{FIRM} website assistant", version="2.0.0", lifespan=lifespan)
@@ -279,7 +363,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_methods=["GET", "POST", "DELETE"],
-    allow_headers=["Content-Type", "X-API-Key"],
+    allow_headers=["Content-Type", "X-API-Key", "Authorization"],
 )
 
 
@@ -323,10 +407,10 @@ def health():
 
 
 # --- Chat ------------------------------------------------------------------
-def standalone_query(req: ChatRequest) -> str:
+def standalone_query(req: ChatRequest, meter=budget.add) -> str:
     """Rewrite a follow-up into a standalone query using the recent turns."""
     history = [(t.role, t.text) for t in req.history[-MAX_HISTORY_TURNS:]]
-    return contextualize(app.state.client, history, req.question, meter=budget.add)
+    return contextualize(app.state.client, history, req.question, meter=meter)
 
 
 @app.post("/chat", response_model=ChatResponse)
@@ -350,31 +434,46 @@ def _done(r: dict) -> str:
         "citations", "sources")}})
 
 
-def stream_pipeline(engine, client, query):
+def public_profile(client):
+    """How the website assistant gates, prompts, finishes and meters."""
+    return dict(
+        gate=lambda q, score: gated_result(client, q, score, meter=budget.add),
+        request=lambda q, passages: dict(model=MODEL, max_tokens=1024, system=SYSTEM,
+                                         messages=messages_for(q, passages)),
+        finish=finish, meter=budget.add,
+    )
+
+
+INTERNAL_PROFILE = dict(
+    gate=lambda q, score: internal.gated_result(score),
+    request=internal.generate_kwargs,
+    finish=internal.finish_internal, meter=internal_budget.add,
+)
+
+
+def stream_pipeline(engine, client, query, profile=None):
     """Same decisions as chat.answer(), streamed. Errors become an SSE event,
     because once streaming starts the HTTP status can no longer change."""
+    p = profile or public_profile(client)
     try:
         passages = engine.search(query, k=TOP_K)
-        budget.add(VOYAGE_PER_QUERY)
+        p["meter"](VOYAGE_PER_QUERY)
         top_score = passages[0][1] if passages else 0.0
 
         if top_score < THRESHOLD:
-            r = gated_result(client, query, top_score, meter=budget.add)
+            r = p["gate"](query, top_score)
             yield _sse({"type": "token", "text": r["text"]})
             yield _done(r)
             return
 
-        with client.messages.stream(
-            model=MODEL, max_tokens=1024, system=SYSTEM,
-            messages=messages_for(query, passages),
-        ) as stream:
+        with client.messages.stream(**p["request"](query, passages)) as stream:
             streamed = ""
             for text in stream.text_stream:
                 streamed += text
                 yield _sse({"type": "token", "text": text})
             final = stream.get_final_message()
-        budget.add(cost_of(final.usage))
-        r = finish(final, passages, top_score)
+        p["meter"](cost_of(final.usage))
+        r = p["finish"](final, passages, top_score)
         if not streamed.strip():
             yield _sse({"type": "token", "text": r["text"]})   # empty reply -> DONT_KNOW
         yield _done(r)
@@ -441,3 +540,30 @@ def admin_delete_lead(lead_id: int):
     if not app.state.leads.delete(lead_id):
         raise ApiError(404, "No such lead.")
     return {"deleted": lead_id}
+
+
+# --- Internal assistant (the firm's lawyers only) --------------------------
+@app.post("/internal/login", dependencies=[Depends(internal_on), Depends(login_guard)])
+def internal_login(req: LoginRequest):
+    if not secrets.compare_digest(req.password.encode(), INTERNAL_PASSWORD.encode()):
+        raise ApiError(401, "Wrong password.")
+    token, expiry = issue_token()
+    return {"token": token, "expires_at": expiry}
+
+
+@app.get("/internal/session", dependencies=[Depends(require_internal)])
+def internal_session():
+    return {"ok": True, "ready": app.state.internal_engine is not None}
+
+
+@app.post("/internal/chat/stream")
+def internal_chat_stream(req: ChatRequest, _gate: None = Depends(internal_gate)):
+    engine = app.state.internal_engine
+    if engine is None:
+        raise ApiError(503, "The internal assistant is not set up yet.")
+    query = standalone_query(req, meter=internal_budget.add)
+    return StreamingResponse(
+        stream_pipeline(engine, app.state.client, query, INTERNAL_PROFILE),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )

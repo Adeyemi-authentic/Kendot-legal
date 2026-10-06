@@ -1,0 +1,4 @@
+# Development and test tools (not installed in the production image).
+-r requirements.txt
+pytest==9.1.1
+httpx==0.28.1

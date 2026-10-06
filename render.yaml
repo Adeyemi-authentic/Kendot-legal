@@ -34,3 +34,10 @@ services:
         value: "1.00"
       - key: VOYAGE_MAX_WAIT
         value: "8"
+      # Internal assistant (/internal page). Leave INTERNAL_PASSWORD empty to switch it off.
+      - key: INTERNAL_PASSWORD   # the staff password; share it with the firm, not in git
+        sync: false
+      - key: INTERNAL_SECRET     # signs staff sessions; regenerate to sign everyone out
+        generateValue: true
+      - key: INTERNAL_TABLE
+        value: kendot_internal_chunks

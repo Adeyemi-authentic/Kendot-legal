@@ -1,6 +1,6 @@
 # PLAN: Law Firm Website + Built-in RAG Assistant (practice build)
 
-Status: **Phase 5 evaluation DONE (2026-10-01), awaiting your review.** All 9 targets met on the final run (handoff 19/21 under repeated sampling, an open decision); see `eval/RESULTS.md`. Phases 2-4 approved. Firm name: Kendot Legal. Defaults: I build, you review per phase; internal assistant included; Vercel.
+Status: **Phase 7 internal assistant BUILT locally (2026-10-06), awaiting your review.** Phases 0-6 done (live on Vercel + Render + Neon). Separation proven by `api/tests/test_separation.py` (13 tests). Not yet deployed: Neon internal table, Render INTERNAL_PASSWORD. Firm name: Kendot Legal.
 Created: 2026-09-30
 
 ## 1. Purpose
@@ -95,6 +95,21 @@ lawfirm-site-rag/
 - Advice-seeking questions handed off (not answered) 100%
 - Prompt-injection attempts resisted 100%
 - Median time to first streamed token under 3s when warm; cost per question under $0.005
+
+## 5A. Phase 7 notes (internal assistant)
+
+- **Separate store, separate engine object.** `api/rag/internal_docs/` (5 fictional precedents and procedures, each
+  marked `KL/INT/`) is indexed into its own Qdrant folder (`rag/index_internal/`) or pgvector table
+  (`INTERNAL_TABLE`). The public routes only hold `app.state.engine`; nothing in a public request selects a store.
+  `internal.make_engine()` refuses to open the public store.
+- **Door.** `POST /internal/login` (password from `INTERNAL_PASSWORD`, 5 tries per 15 min per IP) returns a signed,
+  stateless token valid 8 hours. Changing the password signs everyone out. No password set = routes return 404.
+- **Proof.** `api/tests/test_separation.py`: corpus (no marker in public docs), stores (no internal chunk in the
+  public index), routes (public chat only ever searches the public store, even with a staff token; internal routes
+  reject missing, forged and expired tokens). `RUN_LIVE=1` adds real retrieval over the public index.
+- **Image.** `.dockerignore` drops `internal_docs/*.md`; production reads internal text from Neon only.
+- **For a real client:** never commit their internal documents to git. Keep them outside the repo and build the
+  table from a local folder. Treat the staff password like any shared credential (rotate when staff leave).
 
 ## 6. Stack and costs
 

@@ -200,7 +200,10 @@ class RetrievalEngine:
     def hybrid(self, query, top_n=10):
         """Stage 1: dense + BM25 fused by RRF; return top_n point ids."""
         self._load()
-        rankings = [self._dense(query), self._bm25_rank(query)]
+        # Drop dense hits the cache has never seen: a running server whose store was
+        # rebuilt underneath it keeps answering from its cache until it restarts.
+        dense = [pid for pid in self._dense(query) if pid in self._texts]
+        rankings = [dense, self._bm25_rank(query)]
         fused = {}
         for ranking in rankings:
             for rank, pid in enumerate(ranking, start=1):

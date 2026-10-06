@@ -1,0 +1,202 @@
+Client and Matter Database (October 2026)
+
+Reference: KL/INT/DB-006. Owner: Tomi Kendot (Managing Partner). Last updated: 6 October 2026.
+Internal document of Kendot Legal, a fictional firm. Demonstration content only. Every client, matter number, date and fact below is fictional test data. Confidential: for authorised internal use only.
+
+How to read these records
+
+Each matter has a Matter ID (KL-2026-001 to KL-2026-012). These are matter numbers, not website enquiry references (those look like KL-0001). The Lead Lawyer is primarily responsible for the matter. A Supporting Lawyer assists but is not the lead. A Supervising Partner has oversight only where a record says so. A Senior Associate role on a matter is stated where it applies.
+
+Priority levels are Critical, High and Medium. A Critical matter needs senior-level attention. An action that an internal note says needs a partner's approval has not been done unless the record says so. A record that does not mention litigation steps means the client has not instructed the firm to litigate.
+
+FIRM PERSONNEL (roles in this database)
+
+Tomi Kendot, Managing Partner: firm leadership, complex matters, strategic oversight and senior client relationships.
+
+Ifeanyi Obi, Partner: commercial disputes, corporate matters, contract advice and litigation supervision.
+
+Halima Sani, Partner: property matters, employment law, related civil matters and dispute resolution.
+
+Chidera Eze, Senior Associate: commercial litigation, corporate transactions, complex drafting and matter management.
+
+Bayo Adewale, Associate: legal research, drafting, due diligence, client correspondence and litigation support.
+
+MATTER KL-2026-001: AMINA BELLO
+
+KL-2026-001 (Amina Bello). Matter type: commercial contract dispute. Lead Lawyer: Ifeanyi Obi. Supporting Lawyer: Bayo Adewale. Opposing party: Northbridge Supplies Ltd. Status: pre-litigation negotiation. Priority: High.
+
+KL-2026-001 (Amina Bello) background: Amina Bello owns a Lagos-based hospitality supply company. She entered into a two-year supply agreement with Northbridge Supplies Ltd. A dispute arose after Northbridge allegedly failed to deliver equipment that had already been paid for.
+
+KL-2026-001 (Amina Bello) key issues: alleged breach of the supply agreement; a refund and damages are being considered; the parties are trying to resolve the matter without filing proceedings. Documents: signed supply agreement, payment receipts, delivery correspondence, email correspondence between the parties.
+
+KL-2026-001 (Amina Bello) deadline and next action: 15 October 2026 is the internal deadline to prepare a formal demand letter. Bayo Adewale is to prepare a first draft of the demand letter for review by Ifeanyi Obi. Internal note: do not send correspondence to the opposing party without Ifeanyi Obi's approval.
+
+MATTER KL-2026-002: GREENFIELD AGRO PROCESSING LTD
+
+KL-2026-002 (Greenfield Agro Processing Ltd). Matter type: corporate advisory, shareholders' agreement. Lead Lawyer: Chidera Eze. Supervising Partner: Tomi Kendot. Supporting Lawyer: Bayo Adewale. Status: drafting stage. Priority: Medium.
+
+KL-2026-002 (Greenfield Agro Processing Ltd) background: the company is restructuring its ownership and bringing in a new minority investor. Key issues: review of the proposed shareholders' agreement; minority shareholder protections; board appointment rights; transfer restrictions; dividend provisions. Documents: existing memorandum and articles, draft term sheet, proposed cap table, investor due diligence questionnaire.
+
+KL-2026-002 (Greenfield Agro Processing Ltd) deadline and next action: 20 October 2026, first draft of the shareholders' agreement to be circulated internally. Chidera Eze will review the commercial terms and prepare the first draft. Internal note: Tomi Kendot has asked to review the final draft before it is sent to the client.
+
+MATTER KL-2026-003: DANIEL OKORO
+
+KL-2026-003 (Daniel Okoro). Matter type: property, land acquisition. Lead Lawyer: Halima Sani. Supporting Lawyer: Bayo Adewale. Status: due diligence. Priority: High.
+
+KL-2026-003 (Daniel Okoro) background: Daniel Okoro is buying a commercial property in Ikeja. The firm is instructed to carry out legal due diligence before completion. Key issues: verification of title; review of survey documents; search at the relevant land registry; confirmation of encumbrances; review of the seller's documents. Documents: deed of assignment, survey plan, title documents, seller's identification documents.
+
+KL-2026-003 (Daniel Okoro) deadline and next action: 12 October 2026, due diligence report expected. Bayo Adewale is to compile the registry search results and send them to Halima Sani. Internal note: no completion documents may be signed until Halima Sani confirms the title review is satisfactory.
+
+MATTER KL-2026-004: SUNCREST TECHNOLOGIES LTD
+
+KL-2026-004 (Suncrest Technologies Ltd). Matter type: employment advisory. Lead Lawyer: Halima Sani. Supporting Lawyer: Chidera Eze. Status: advisory. Priority: Medium.
+
+KL-2026-004 (Suncrest Technologies Ltd) background: the client asked for advice on the proposed termination of a senior employee after a restructuring exercise. Key issues: employment contract review; notice requirements; severance obligations; risk of a wrongful termination claim; recommended documentation and communication process. Documents: employment contract, employee handbook, proposed restructuring plan, previous performance correspondence.
+
+KL-2026-004 (Suncrest Technologies Ltd) deadline and next action: 9 October 2026, the client expects preliminary written advice. Chidera Eze is to review the employment agreement and identify the contractual notice and termination provisions. Internal note: Halima Sani will give the final legal recommendation to the client.
+
+MATTER KL-2026-005: MERIDIAN ESTATES LTD
+
+KL-2026-005 (Meridian Estates Ltd). Matter type: property dispute. Lead Lawyer: Tomi Kendot. Supporting Lawyer: Halima Sani. Status: litigation. Priority: Critical.
+
+KL-2026-005 (Meridian Estates Ltd) background: the client is in a dispute about possession of, and development rights over, a commercial property. Key issues: competing claims to development rights; possession of the property; historical transaction documents; a possible injunction application. Documents: original purchase agreement, deed of assignment, development agreement, previous correspondence, court documents.
+
+KL-2026-005 (Meridian Estates Ltd) deadline and next action: 22 October 2026, internal deadline to prepare the litigation strategy and review upcoming procedural requirements. Halima Sani is to prepare a chronology of events and identify gaps in the documentary evidence. Internal note: this is a high-value, strategically important matter; all major filings and settlement discussions need Tomi Kendot's approval.
+
+MATTER KL-2026-006: CHUKWUDI NNAMANI
+
+KL-2026-006 (Chukwudi Nnamani). Matter type: debt recovery. Lead Lawyer: Ifeanyi Obi. Supporting Lawyer: Bayo Adewale. Status: pre-action. Priority: High. Amount in dispute: NGN 18,500,000.
+
+KL-2026-006 (Chukwudi Nnamani) background: the client provided business financing to a former business partner, and the repayment date passed without full repayment. Key issues: outstanding principal; interest claimed under the agreement; payment history; possible settlement before litigation. Documents: loan agreement, bank transfer evidence, repayment schedule, WhatsApp and email correspondence.
+
+KL-2026-006 (Chukwudi Nnamani) deadline and next action: 14 October 2026, demand letter to be reviewed. Bayo Adewale will prepare the demand letter and calculate the outstanding amount from the available payment records. Internal note: the client prefers settlement if repayment can be secured quickly.
+
+MATTER KL-2026-007: LUMEN FOODS NIGERIA LTD
+
+KL-2026-007 (Lumen Foods Nigeria Ltd). Matter type: intellectual property, trademark. Lead Lawyer: Chidera Eze. Supervising Partner: Ifeanyi Obi. Supporting Lawyer: Bayo Adewale. Status: advisory and registration. Priority: Medium.
+
+KL-2026-007 (Lumen Foods Nigeria Ltd) background: the client wants protection for a new consumer food brand and its logo. Key issues: trademark availability; classification of goods; application strategy; monitoring for conflicting marks. Documents: proposed logo, brand name information, product descriptions, company registration documents.
+
+KL-2026-007 (Lumen Foods Nigeria Ltd) deadline and next action: 19 October 2026, client approval needed before filing instructions are finalised. Chidera Eze is to send the client the proposed filing strategy and the list of required documents. Internal note: any possibly conflicting mark found in the search must be escalated to Ifeanyi Obi.
+
+MATTER KL-2026-008: GRACE EKANEM
+
+KL-2026-008 (Grace Ekanem). Matter type: family property and estate advisory. Lead Lawyer: Halima Sani. Supporting Lawyer: Bayo Adewale. Status: document review. Priority: Medium.
+
+KL-2026-008 (Grace Ekanem) background: the client wants advice on administering and distributing property after the death of a family member. Key issues: review of the available estate documents; ownership of specific properties; documents needed from beneficiaries; proposed distribution arrangements. Documents: will, property documents, family correspondence, beneficiaries' identification documents.
+
+KL-2026-008 (Grace Ekanem) deadline and next action: 16 October 2026, client meeting to review outstanding documents. Bayo Adewale is to prepare a checklist of missing documents before the meeting. Internal note: make no assumptions about ownership until the underlying title documents have been reviewed.
+
+MATTER KL-2026-009: APEX MOBILITY SOLUTIONS LTD
+
+KL-2026-009 (Apex Mobility Solutions Ltd). Matter type: commercial transaction, acquisition. Lead Lawyer: Tomi Kendot. Senior Associate: Chidera Eze. Supporting Lawyer: Bayo Adewale. Status: due diligence and negotiation. Priority: Critical.
+
+KL-2026-009 (Apex Mobility Solutions Ltd) background: the client is negotiating to acquire a smaller logistics technology company. Key issues: corporate due diligence; existing contracts; employee liabilities; intellectual property ownership; outstanding litigation or regulatory issues; purchase price adjustment provisions. Documents: heads of terms, target company corporate records, material contracts, employee schedule, intellectual property schedule.
+
+KL-2026-009 (Apex Mobility Solutions Ltd) deadline and next action: 30 October 2026, target date to complete legal due diligence. Chidera Eze is coordinating the due diligence review and sends a weekly issue tracker to Tomi Kendot. Internal note: confidential transaction; share information only with team members assigned to the matter.
+
+MATTER KL-2026-010: VICTOR ADEYEMI
+
+KL-2026-010 (Victor Adeyemi). Matter type: employment, workplace dispute. Lead Lawyer: Ifeanyi Obi. Supporting Lawyer: Halima Sani. Status: settlement negotiation. Priority: High.
+
+KL-2026-010 (Victor Adeyemi) background: the client is a former executive of a privately owned company, in a dispute about outstanding compensation and the restrictive obligations in his employment agreement. Key issues: outstanding compensation; interpretation of restrictive covenants; confidentiality obligations; possible settlement. Documents: employment agreement, termination letter, compensation records, previous settlement correspondence.
+
+KL-2026-010 (Victor Adeyemi) deadline and next action: 13 October 2026, response due to the opposing party's latest settlement proposal. Halima Sani will review the latest proposal and give settlement recommendations to Ifeanyi Obi. Internal note: do not accept or reject any settlement terms without Ifeanyi Obi's approval.
+
+MATTER KL-2026-011: RIVERSIDE MEDICAL SUPPLIES LTD
+
+KL-2026-011 (Riverside Medical Supplies Ltd). Matter type: regulatory and commercial advisory. Lead Lawyer: Tomi Kendot. Supporting Lawyer: Chidera Eze. Status: advisory. Priority: High.
+
+KL-2026-011 (Riverside Medical Supplies Ltd) background: the client is expanding its distribution operations and asked for advice on its contracts and regulatory obligations. Key issues: distribution agreements; supplier contracts; regulatory compliance; risk allocation and indemnities; termination provisions. Documents: existing distribution agreement, supplier contracts, compliance checklist, proposed new distributor agreement.
+
+KL-2026-011 (Riverside Medical Supplies Ltd) deadline and next action: 21 October 2026, draft revised distribution agreement due for internal review. Chidera Eze will revise the agreement and flag clauses that need commercial decisions from the client. Internal note: Tomi Kendot wants a short risk summary before the revised agreement is sent to the client.
+
+MATTER KL-2026-012: BRIGHTPATH EDUCATION SERVICES LTD
+
+KL-2026-012 (BrightPath Education Services Ltd). Matter type: commercial contract dispute. Lead Lawyer: Chidera Eze. Supervising Partner: Ifeanyi Obi. Supporting Lawyer: Bayo Adewale. Status: evidence gathering. Priority: Medium.
+
+KL-2026-012 (BrightPath Education Services Ltd) background: the client is disputing an alleged breach of a technology services agreement by a software vendor. Key issues: service-level obligations; alleged system downtime; contractual credits; termination rights; possible damages. Documents: technology services agreement, service-level agreement, incident reports, invoice records, email correspondence.
+
+KL-2026-012 (BrightPath Education Services Ltd) deadline and next action: 17 October 2026, internal evidence review. Bayo Adewale will organise the client's correspondence and incident records into a chronological evidence file. Internal note: Chidera Eze will decide whether the evidence supports a formal claim after reviewing the chronology.
+
+WORK BY LAWYER: TOMI KENDOT (MANAGING PARTNER)
+
+Tomi Kendot's matters: Lead Lawyer on KL-2026-005 Meridian Estates Ltd (Critical), KL-2026-009 Apex Mobility Solutions Ltd (Critical) and KL-2026-011 Riverside Medical Supplies Ltd (High). Supervising Partner on KL-2026-002 Greenfield Agro Processing Ltd.
+
+Tomi Kendot action: approve all major filings and settlement discussions on KL-2026-005 Meridian Estates Ltd (litigation strategy deadline 22 October 2026).
+
+Tomi Kendot action: receive Chidera Eze's weekly issue tracker on KL-2026-009 Apex Mobility Solutions Ltd (due diligence target 30 October 2026).
+
+Tomi Kendot action: review a short risk summary before the revised agreement on KL-2026-011 Riverside Medical Supplies Ltd goes to the client (draft due 21 October 2026).
+
+Tomi Kendot action: review the final shareholders' agreement on KL-2026-002 Greenfield Agro Processing Ltd before it goes to the client (first draft due 20 October 2026).
+
+WORK BY LAWYER: IFEANYI OBI (PARTNER)
+
+Ifeanyi Obi's matters: Lead Lawyer on KL-2026-001 Amina Bello, KL-2026-006 Chukwudi Nnamani and KL-2026-010 Victor Adeyemi. Supervising Partner on KL-2026-007 Lumen Foods Nigeria Ltd and KL-2026-012 BrightPath Education Services Ltd.
+
+Ifeanyi Obi action: receive Halima Sani's settlement recommendations and approve any settlement terms on KL-2026-010 Victor Adeyemi (response due 13 October 2026).
+
+Ifeanyi Obi action: review the demand letter on KL-2026-006 Chukwudi Nnamani (14 October 2026).
+
+Ifeanyi Obi action: review Bayo Adewale's draft demand letter and approve any correspondence to Northbridge Supplies Ltd on KL-2026-001 Amina Bello (15 October 2026).
+
+Ifeanyi Obi action: deal with any conflicting trademark escalated by Chidera Eze on KL-2026-007 Lumen Foods Nigeria Ltd.
+
+WORK BY LAWYER: HALIMA SANI (PARTNER)
+
+Halima Sani's matters: Lead Lawyer on KL-2026-003 Daniel Okoro, KL-2026-004 Suncrest Technologies Ltd and KL-2026-008 Grace Ekanem. Supporting Lawyer on KL-2026-005 Meridian Estates Ltd and KL-2026-010 Victor Adeyemi.
+
+Halima Sani action: give the final legal recommendation to the client on KL-2026-004 Suncrest Technologies Ltd (preliminary advice due 9 October 2026).
+
+Halima Sani action: confirm the title review before any completion documents are signed on KL-2026-003 Daniel Okoro (due diligence report due 12 October 2026).
+
+Halima Sani action: review the latest settlement proposal and send recommendations to Ifeanyi Obi on KL-2026-010 Victor Adeyemi (13 October 2026).
+
+Halima Sani action: lead the client meeting on outstanding documents on KL-2026-008 Grace Ekanem (16 October 2026).
+
+Halima Sani action: prepare the chronology of events and identify evidence gaps on KL-2026-005 Meridian Estates Ltd (22 October 2026).
+
+WORK BY LAWYER: CHIDERA EZE (SENIOR ASSOCIATE)
+
+Chidera Eze's matters: Lead Lawyer on KL-2026-002 Greenfield Agro Processing Ltd, KL-2026-007 Lumen Foods Nigeria Ltd and KL-2026-012 BrightPath Education Services Ltd. Senior Associate on KL-2026-009 Apex Mobility Solutions Ltd (Tomi Kendot leads). Supporting Lawyer on KL-2026-004 Suncrest Technologies Ltd and KL-2026-011 Riverside Medical Supplies Ltd.
+
+Chidera Eze action: identify the notice and termination provisions in the employment agreement on KL-2026-004 Suncrest Technologies Ltd (9 October 2026).
+
+Chidera Eze action: send the client the filing strategy and required documents list on KL-2026-007 Lumen Foods Nigeria Ltd (19 October 2026).
+
+Chidera Eze action: review the commercial terms and prepare the first draft shareholders' agreement on KL-2026-002 Greenfield Agro Processing Ltd (20 October 2026).
+
+Chidera Eze action: revise the distribution agreement and flag clauses needing commercial decisions on KL-2026-011 Riverside Medical Supplies Ltd (21 October 2026).
+
+Chidera Eze action: coordinate the due diligence review and send Tomi Kendot a weekly issue tracker on KL-2026-009 Apex Mobility Solutions Ltd (30 October 2026).
+
+Chidera Eze action: decide whether the evidence supports a formal claim, after the chronology is ready, on KL-2026-012 BrightPath Education Services Ltd.
+
+WORK BY LAWYER: BAYO ADEWALE (ASSOCIATE)
+
+Bayo Adewale's matters: Supporting Lawyer on KL-2026-001, KL-2026-002, KL-2026-003, KL-2026-006, KL-2026-007, KL-2026-008, KL-2026-009 and KL-2026-012. Bayo leads no matters. Bayo has five next actions, all in October 2026.
+
+Bayo Adewale action 1 of 5: compile the registry search results and send them to Halima Sani on KL-2026-003 Daniel Okoro (report due 12 October 2026).
+
+Bayo Adewale action 2 of 5: prepare the demand letter and calculate the outstanding amount from the payment records on KL-2026-006 Chukwudi Nnamani (review 14 October 2026).
+
+Bayo Adewale action 3 of 5: prepare the first draft demand letter for review by Ifeanyi Obi on KL-2026-001 Amina Bello (15 October 2026).
+
+Bayo Adewale action 4 of 5: prepare a checklist of missing documents before the client meeting on KL-2026-008 Grace Ekanem (16 October 2026).
+
+Bayo Adewale action 5 of 5: organise the correspondence and incident records into a chronological evidence file on KL-2026-012 BrightPath Education Services Ltd (17 October 2026).
+
+UPCOMING DEADLINES (OCTOBER 2026)
+
+Deadlines in the week of Monday 5 to Sunday 11 October 2026 (one deadline): 9 October, KL-2026-004 Suncrest Technologies Ltd, preliminary employment advice.
+
+Deadlines in the week of Monday 12 to Sunday 18 October 2026 (six deadlines): 12 October, KL-2026-003 Daniel Okoro, property due diligence report. 13 October, KL-2026-010 Victor Adeyemi, response to settlement proposal. 14 October, KL-2026-006 Chukwudi Nnamani, demand letter review. 15 October, KL-2026-001 Amina Bello, demand letter preparation. 16 October, KL-2026-008 Grace Ekanem, client document review meeting. 17 October, KL-2026-012 BrightPath Education Services Ltd, internal evidence review.
+
+Deadlines in the week of Monday 19 to Sunday 25 October 2026 (four deadlines): 19 October, KL-2026-007 Lumen Foods Nigeria Ltd, client approval of the filing strategy. 20 October, KL-2026-002 Greenfield Agro Processing Ltd, shareholders' agreement draft. 21 October, KL-2026-011 Riverside Medical Supplies Ltd, revised distribution agreement. 22 October, KL-2026-005 Meridian Estates Ltd, litigation strategy review.
+
+Deadlines in the week of Monday 26 October to Sunday 1 November 2026 (one deadline): 30 October, KL-2026-009 Apex Mobility Solutions Ltd, completion of due diligence.
+
+MATTERS BY PRIORITY
+
+Critical (senior-level attention): KL-2026-005 Meridian Estates Ltd and KL-2026-009 Apex Mobility Solutions Ltd. These are the only two critical matters. High: KL-2026-001 Amina Bello, KL-2026-003 Daniel Okoro, KL-2026-006 Chukwudi Nnamani, KL-2026-010 Victor Adeyemi, KL-2026-011 Riverside Medical Supplies Ltd. Medium: KL-2026-002 Greenfield Agro Processing Ltd, KL-2026-004 Suncrest Technologies Ltd, KL-2026-007 Lumen Foods Nigeria Ltd, KL-2026-008 Grace Ekanem, KL-2026-012 BrightPath Education Services Ltd.

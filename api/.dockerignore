@@ -19,3 +19,4 @@ rag/leads.sqlite
 # Internal documents: production reads them from the pgvector table, so the
 # image carries only their titles (internal_docs/sources.json), never the text.
 rag/internal_docs/*.md
+rag/internal_docs/*.txt

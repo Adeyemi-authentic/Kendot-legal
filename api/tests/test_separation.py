@@ -45,7 +45,7 @@ INTERNAL_QUESTIONS = [
 
 # --- 1. Corpus --------------------------------------------------------------
 def test_every_internal_doc_carries_the_marker():
-    docs = sorted(internal.INTERNAL_DOCS.glob("*.md"))
+    docs = sorted(p for p in internal.INTERNAL_DOCS.iterdir() if p.suffix in {".md", ".txt"})
     assert docs, "no internal documents found"
     for path in docs:
         assert MARKER in path.read_text(encoding="utf-8"), path.name

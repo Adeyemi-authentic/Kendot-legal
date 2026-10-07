@@ -16,3 +16,7 @@ web/dist/
 web/.astro/
 eval/results/latest.json
 api/rag/index_internal/
+
+# Local working notes -- kept off GitHub
+PLAN.md
+SKILL.md

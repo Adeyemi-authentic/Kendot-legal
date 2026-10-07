@@ -70,7 +70,10 @@ class PgRetrievalEngine(RetrievalEngine):
         """
         # connect_timeout so a DNS/network blip fails fast instead of hanging
         # (Neon is remote; the free tier occasionally drops a lookup).
-        self.conn = psycopg.connect(self.dsn, connect_timeout=15)
+        # autocommit: a read must not leave the long-lived connection idle in an
+        # open transaction -- Neon terminates it (IdleInTransactionSessionTimeout)
+        # and the next question fails. Writes use an explicit transaction.
+        self.conn = psycopg.connect(self.dsn, connect_timeout=15, autocommit=True)
         with self.conn.cursor() as cur:
             cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
         self.conn.commit()
@@ -99,14 +102,18 @@ class PgRetrievalEngine(RetrievalEngine):
         idle between requests; the first query afterward then fails with
         'server closed the connection unexpectedly'. Retrying once on a fresh
         connection makes retrieval resilient to that in the deployed app.
+
+        The server can also end the session with a non-operational error (e.g.
+        IdleInTransactionSessionTimeout is an InternalError), so retry whenever
+        the connection is left broken, whatever the error class.
         """
         for attempt in (1, 2):
             try:
                 with self.conn.cursor() as cur:
                     cur.execute(sql, params)
                     return cur.fetchall()
-            except psycopg.OperationalError:
-                if attempt == 2:
+            except psycopg.Error as e:
+                if attempt == 2 or not (isinstance(e, psycopg.OperationalError) or self.conn.broken):
                     raise
                 self._reconnect()
 
@@ -154,13 +161,12 @@ class PgRetrievalEngine(RetrievalEngine):
         print(f"  embedded ({tokens} tokens).")
 
         self._ensure_live()         # the idle connection may have been reaped during embed
-        with self.conn.cursor() as cur:
+        with self.conn.transaction(), self.conn.cursor() as cur:   # one all-or-nothing burst
             for i, ((source, chunk), vec) in enumerate(zip(records, vectors)):
                 cur.execute(
                     f"INSERT INTO {self.table} (id, source, chunk_text, embedding) VALUES (%s, %s, %s, %s)",
                     (i, source, chunk, np.array(vec, dtype=np.float32)),
                 )
-        self.conn.commit()
         print(f"Stored {len(records)} chunks in pgvector table '{self.table}'.")
         # NOTE: no ANN index (e.g. HNSW) on purpose -- with ~50 chunks an exact
         # scan is instant AND gives EXACT nearest neighbours, which is what the

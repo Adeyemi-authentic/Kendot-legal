@@ -4,6 +4,16 @@
     POST   /chat                one-shot cited answer (JSON)                  public
     POST   /chat/stream         token-by-token SSE + citations                public
     POST   /intake              lawyer-handoff enquiry form                   public
+    GET    /booking/options     fee, offices, payment methods, form wording   public
+    GET    /booking/slots       free consultation slots                       public
+    POST   /bookings            book a slot (held while the visitor pays)     public
+    GET    /bookings/{token}    one booking's status (checks Paystack)        booking token
+    POST   /bookings/{token}/pay            open a Paystack checkout          booking token
+    POST   /bookings/{token}/transfer-sent  "I've paid by direct transfer"    booking token
+    POST   /payments/paystack/webhook       payment confirmations            Paystack signature
+    GET    /admin/bookings      bookings, newest slot first                   X-API-Key
+    POST   /admin/bookings/{id}/mark-paid|confirm|cancel                      X-API-Key
+    DELETE /admin/bookings/{id} erase one booking (NDPA erasure request)      X-API-Key
     GET    /admin/leads         recent enquiries                              X-API-Key
     DELETE /admin/leads/{id}    erase one enquiry (NDPA erasure request)      X-API-Key
     POST   /internal/login      password -> signed session token (8 hours)    INTERNAL_PASSWORD
@@ -42,13 +52,13 @@ import sys
 import time
 from collections import deque
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Literal
 from urllib.parse import quote
 
 import anthropic
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Header, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -69,6 +79,10 @@ from contextualize import contextualize                        # noqa: E402
 from leads import LeadStore                                    # noqa: E402
 from voyage_client import VoyageBusy, set_max_wait            # noqa: E402
 import internal                                                # noqa: E402
+import bookings as bk                                          # noqa: E402
+from gcal import CalendarError, make_calendar                  # noqa: E402
+from payments import PaymentError, make_paystack, settled      # noqa: E402
+from whatsapp import make_alerts                               # noqa: E402
 
 ENGINE = os.environ.get("ENGINE", "qdrant").lower()
 if ENGINE == "pg":
@@ -107,12 +121,29 @@ LOGIN_RATE_LIMIT = int(os.environ.get("LOGIN_RATE_LIMIT", "5"))        # attempt
 LOGIN_RATE_WINDOW = float(os.environ.get("LOGIN_RATE_WINDOW", "900"))  # ... per 15 minutes
 FIRM_WHATSAPP = "".join(ch for ch in os.environ.get("FIRM_WHATSAPP", "+234 700 000 0003")
                         if ch.isdigit())
+# Consultation bookings (see bookings.py for the status flow).
+SITE_URL = os.environ.get("SITE_URL", "http://localhost:4321").rstrip("/")
+BOOKING_FEE_NGN = int(os.environ.get("BOOKING_FEE_NGN", "50000"))
+BOOKING_HOLD = timedelta(minutes=float(os.environ.get("BOOKING_HOLD_MINUTES", "30")))
+TRANSFER_HOLD = timedelta(hours=float(os.environ.get("TRANSFER_HOLD_HOURS", "24")))
+BOOKING_RATE_LIMIT = int(os.environ.get("BOOKING_RATE_LIMIT", "5"))      # bookings per IP ...
+BOOKING_RATE_WINDOW = float(os.environ.get("BOOKING_RATE_WINDOW", "3600"))  # ... per hour
+# "City=address|City=address". The keys are what the form offers for in-person meetings.
+OFFICES = dict(part.split("=", 1) for part in os.environ.get(
+    "FIRM_OFFICES", "Lagos=12 Kendot Close, Lekki Phase 1, Lagos|"
+                    "Abuja=Suite 4, Kendot House, Wuse 2, Abuja").split("|") if "=" in part)
+BANK = {k: os.environ.get(f"FIRM_BANK_{k.upper()}", v) for k, v in {
+    "name": "Demo Bank", "account_name": "Kendot Legal (demo)", "account_number": "0000000000"}.items()}
 
 MAX_QUESTION = 500
 MAX_HISTORY_TURNS = 6
 CONSENT_TEXT = (
     f"I agree that {FIRM} may use these details to respond to my enquiry, "
     "as described in the privacy notice."
+)
+BOOKING_CONSENT_TEXT = (
+    f"I agree that {FIRM} may use these details to arrange my consultation, including "
+    "adding my name and email to the firm's Google Calendar invite, as described in the privacy notice."
 )
 # Matter types come from the synced practice pages, so a client build needs no edit here.
 MATTER_TYPES = sorted(e["id"] for e in MANIFEST.values() if e["kind"] == "practice") + ["other"]
@@ -191,6 +222,46 @@ class IntakeRequest(BaseModel):
         if not self.consent:
             raise ValueError("Consent is required so we can use your details to reply.")
         return self
+
+
+class BookingRequest(BaseModel):
+    name: str = Field(min_length=2, max_length=100)
+    email: str = Field(max_length=200, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    phone: str = Field(max_length=30, pattern=r"^\+?[0-9 ()-]{7,30}$")
+    matter_type: str
+    description: str = Field(min_length=10, max_length=2000)
+    mode: Literal["virtual", "in_person"]
+    office: str | None = None
+    start: str = Field(max_length=40)                  # a start time from /booking/slots
+    page_url: str | None = Field(default=None, max_length=300)
+    consent: bool
+    website: str | None = None                         # honeypot, as on /intake
+
+    @field_validator("name", "email", "phone", "description", mode="before")
+    @classmethod
+    def _strip(cls, v):
+        return v.strip() if isinstance(v, str) else v
+
+    @field_validator("matter_type")
+    @classmethod
+    def _known_matter(cls, v):
+        if v not in MATTER_TYPES:
+            raise ValueError(f"matter_type must be one of: {', '.join(MATTER_TYPES)}")
+        return v
+
+    @model_validator(mode="after")
+    def _checks(self):
+        if self.mode == "in_person" and self.office not in OFFICES:
+            raise ValueError(f"Please choose an office: {', '.join(OFFICES)}.")
+        if self.mode == "virtual":
+            self.office = None
+        if not self.consent:
+            raise ValueError("Consent is required so we can arrange your consultation.")
+        return self
+
+
+class CancelRequest(BaseModel):
+    reason: str = Field(default="", max_length=300)
 
 
 class LoginRequest(BaseModel):
@@ -281,6 +352,9 @@ internal_budget = Budget(INTERNAL_DAILY_BUDGET_USD)    # lawyers are not starved
 chat_guard = rate_limit("chat", CHAT_RATE_LIMIT, CHAT_RATE_WINDOW)
 intake_guard = rate_limit("intake", INTAKE_RATE_LIMIT, INTAKE_RATE_WINDOW)
 login_guard = rate_limit("login", LOGIN_RATE_LIMIT, LOGIN_RATE_WINDOW)
+booking_guard = rate_limit("booking", BOOKING_RATE_LIMIT, BOOKING_RATE_WINDOW)
+booking_step_guard = rate_limit("booking-step", 20, 3600)   # pay / "I've sent a transfer"
+booking_read_guard = rate_limit("booking-read", 60, 60)     # slot lists and status checks
 internal_chat_guard = rate_limit("internal-chat", CHAT_RATE_LIMIT, CHAT_RATE_WINDOW)
 
 
@@ -350,6 +424,10 @@ async def lifespan(app: FastAPI):
     app.state.engine._load()            # build the BM25 cache now, not on the first question
     app.state.client = anthropic.Anthropic()
     app.state.leads = LeadStore()
+    app.state.bookings = bk.BookingStore()
+    app.state.calendar = make_calendar(FIRM)
+    app.state.paystack = make_paystack()
+    app.state.alerts = make_alerts()
     app.state.internal_engine = open_internal_engine()
     yield
     app.state.engine.close()
@@ -496,10 +574,13 @@ def chat_stream(req: ChatRequest, _gate: None = Depends(chat_gate)):
 
 
 # --- Intake (lawyer handoff) ----------------------------------------------
+def wa_link(text: str, number: str = FIRM_WHATSAPP) -> str:
+    return f"https://wa.me/{number}?text={quote(text)}"
+
+
 def whatsapp_url(reference: str, matter_type: str) -> str:
-    text = (f"Hello {FIRM}, I have just sent an enquiry (reference {reference}) "
-            f"about {matter_type.replace('-', ' ')}.")
-    return f"https://wa.me/{FIRM_WHATSAPP}?text={quote(text)}"
+    return wa_link(f"Hello {FIRM}, I have just sent an enquiry (reference {reference}) "
+                   f"about {matter_type.replace('-', ' ')}.")
 
 
 @app.post("/intake", response_model=IntakeResponse)
@@ -528,6 +609,287 @@ def intake_options():
     return {"matter_types": MATTER_TYPES, "consent_text": CONSENT_TEXT}
 
 
+# --- Consultation bookings -----------------------------------------------
+# The firm's calendar is asked for free/busy at most once a minute; a new booking
+# clears the cache so the slot it took disappears at once.
+_busy_cache: dict = {"at": 0.0, "busy": []}
+
+
+def naira(kobo: int) -> str:
+    return f"₦{kobo // 100:,}"
+
+
+def admin_url() -> str:
+    return f"{SITE_URL}/admin/bookings/"
+
+
+def alert(tasks: BackgroundTasks, text: str) -> None:
+    """Send a WhatsApp alert to the firm after the response has gone."""
+    tasks.add_task(app.state.alerts.send, text)
+
+
+def sweep() -> None:
+    """Release holds that ran out, and take them off the firm's calendar."""
+    for b in app.state.bookings.expire_stale(bk.now_utc()):
+        if b["calendar_event_id"]:
+            try:
+                app.state.calendar.delete(b["calendar_event_id"], notify=False)
+                app.state.bookings.set(b["id"], calendar_event_id=None)
+            except CalendarError as exc:
+                print(f"[WARN] could not remove expired hold {bk.reference(b['id'])}: {exc}",
+                      file=sys.stderr)
+
+
+def free_slots() -> list[datetime]:
+    sched = bk.Schedule()
+    now = bk.now_utc()
+    window_end = now + timedelta(days=sched.days_ahead + 1)
+    if time.monotonic() - _busy_cache["at"] > 60:
+        try:
+            _busy_cache["busy"] = app.state.calendar.busy(now, window_end)
+        except Exception as exc:                        # noqa: BLE001
+            print(f"[ERROR] calendar free/busy: {exc}", file=sys.stderr)
+            raise ApiError(503, "Online booking is unavailable right now. Please message us "
+                                "on WhatsApp or use the contact page.") from exc
+        _busy_cache["at"] = time.monotonic()
+    held = app.state.bookings.held_starts(now, window_end)
+    return sched.free(now, _busy_cache["busy"], held)
+
+
+def hold_note(status: str) -> str:
+    return {"pending_payment": "awaiting payment",
+            "transfer_pending": "transfer to check",
+            "paid": "PAID, conflict check then confirm"}.get(status, status)
+
+
+def place_hold(b: dict) -> None:
+    """Put (or re-title) the booking's private hold on the firm's calendar.
+
+    A calendar failure must not lose the booking: the database row is what holds
+    the slot, so we log and carry on, and Confirm creates the event if it is missing.
+    """
+    cal = app.state.calendar
+    try:
+        if b["calendar_event_id"]:
+            cal.retitle(b["calendar_event_id"], b, hold_note(b["status"]))
+        else:
+            event_id = cal.hold(b, hold_note(b["status"]))
+            if event_id:
+                app.state.bookings.set(b["id"], calendar_event_id=event_id)
+                b["calendar_event_id"] = event_id
+    except CalendarError as exc:
+        print(f"[WARN] calendar hold for {bk.reference(b['id'])}: {exc}", file=sys.stderr)
+
+
+def describe(b: dict) -> str:
+    """One line for alerts: 'BK-0042, Tue 14 Oct, 10:00 WAT, virtual, property (Ada Obi)'."""
+    where = "virtual" if b["mode"] == "virtual" else f"in person, {b['office']}"
+    return (f"{bk.reference(b['id'])}, {bk.label(bk.parse(b['start_at']))}, {where}, "
+            f"{b['matter_type'].replace('-', ' ')} ({b['name']})")
+
+
+def status_message(b: dict) -> str:
+    until = bk.label(bk.parse(b["hold_expires_at"])) if b["hold_expires_at"] else ""
+    fee = naira(b["amount_kobo"])
+    return {
+        "pending_payment": (f"Booked, subject to confirmation. Your slot is held until {until}. "
+                            f"Pay the {fee} consultation fee to keep it."),
+        "transfer_pending": (f"Thank you. We will check our account for your transfer and update "
+                             f"you. Your slot is held until {until}."),
+        "paid": ("Payment received. Your booking is subject to confirmation: a lawyer will run a "
+                 "conflict check and email you the calendar invite within one working day."),
+        "confirmed": (f"Confirmed. The calendar invite has been sent to {b['email']}."
+                      + (" It includes the Google Meet link." if b["meet_url"] else "")),
+        "cancelled": "This booking has been cancelled. We will contact you about any refund.",
+        "expired": ("The hold on this slot ran out before payment arrived. "
+                    "Please book a new time."),
+        "paid_slot_taken": ("Payment received, but your slot was taken while the payment was "
+                            "processing. We will contact you to rebook or refund."),
+    }.get(b["status"], "")
+
+
+def visitor_view(b: dict) -> dict:
+    """What the visitor's browser may see: no description, no internal ids."""
+    start = bk.parse(b["start_at"])
+    ref = bk.reference(b["id"])
+    return {
+        "reference": ref, "token": b["token"], "status": b["status"],
+        "message": status_message(b), "start": b["start_at"], "start_label": bk.label(start),
+        "mode": b["mode"], "office": b["office"], "address": OFFICES.get(b["office"] or ""),
+        "fee": naira(b["amount_kobo"]), "hold_expires_at": b["hold_expires_at"],
+        "meet_url": b["meet_url"] if b["status"] == "confirmed" else None,
+        "can_pay": b["status"] in ("pending_payment", "transfer_pending"),
+        "paystack": app.state.paystack is not None,
+        "bank": {**BANK, "narration": ref},
+        "whatsapp_url": wa_link(f"Hello {FIRM}, I have just booked a consultation "
+                                f"(reference {ref}) for {bk.label(start)}."),
+    }
+
+
+def mark_paid(b: dict, method: str, pay_ref: str | None, tasks: BackgroundTasks) -> dict:
+    """Record a payment once, from whichever route sees it first."""
+    store = app.state.bookings
+    fields = {"payment_method": method, "payment_ref": pay_ref or b["payment_ref"],
+              "paid_at": bk.iso(bk.now_utc()), "hold_expires_at": None}
+    try:
+        moved = store.move(b["id"], ("pending_payment", "transfer_pending", "expired"),
+                           "paid", **fields)
+    except bk.SlotTaken:
+        moved = store.move(b["id"], ("expired",), "paid_slot_taken", **fields)
+        if moved:
+            alert(tasks, f"Late payment, slot taken: {describe(moved)}. Paid "
+                         f"{naira(moved['amount_kobo'])} by {method}. Rebook or refund. {admin_url()}")
+        return moved or store.get(b["id"])
+    if not moved:
+        return store.get(b["id"])               # someone else recorded it already
+    place_hold(moved)
+    alert(tasks, f"Paid {naira(moved['amount_kobo'])} ({method}): {describe(moved)}. "
+                 f"Run the conflict check, then confirm or cancel: {admin_url()}")
+    return moved
+
+
+def check_paystack(b: dict, tasks: BackgroundTasks) -> dict:
+    """If the visitor has been to checkout, ask Paystack whether it went through.
+
+    Covers a slow or missed webhook (and local development, where Paystack cannot
+    reach the API at all).
+    """
+    ps = app.state.paystack
+    if not (ps and b["payment_ref"] and b["status"] in ("pending_payment", "transfer_pending", "expired")):
+        return b
+    try:
+        data = ps.verify(b["payment_ref"])
+    except PaymentError as exc:
+        print(f"[WARN] Paystack verify {b['payment_ref']}: {exc}", file=sys.stderr)
+        return b
+    return mark_paid(b, "paystack", b["payment_ref"], tasks) if settled(data, b["amount_kobo"]) else b
+
+
+def booking_by_token(token: str) -> dict:
+    b = app.state.bookings.by_token(token) if len(token) <= 64 else None
+    if not b:
+        raise ApiError(404, "Booking not found.")
+    return b
+
+
+@app.get("/booking/options")
+def booking_options():
+    """What the booking page needs to draw the form."""
+    sched = bk.Schedule()
+    return {"matter_types": MATTER_TYPES, "consent_text": BOOKING_CONSENT_TEXT,
+            "fee": naira(BOOKING_FEE_NGN * 100), "length_minutes": sched.length,
+            "offices": [{"city": c, "address": a} for c, a in OFFICES.items()],
+            "paystack": app.state.paystack is not None, "bank": BANK,
+            "hold_minutes": int(BOOKING_HOLD.total_seconds() // 60)}
+
+
+@app.get("/booking/slots", dependencies=[Depends(booking_read_guard)])
+def booking_slots():
+    """Free start times, grouped by day (in WAT)."""
+    sweep()
+    days: dict[str, dict] = {}
+    for s in free_slots():
+        local = s.astimezone(bk.WAT)
+        day = days.setdefault(local.date().isoformat(), {
+            "date": local.date().isoformat(), "label": f"{local:%A} {local.day} {local:%B}",
+            "slots": []})
+        day["slots"].append({"start": bk.iso(s), "label": f"{local:%H:%M}"})
+    return {"timezone": "WAT (UTC+1)", "days": list(days.values())}
+
+
+@app.post("/bookings")
+def create_booking(req: BookingRequest, tasks: BackgroundTasks,
+                   _rl: None = Depends(booking_guard)):
+    if req.website:
+        raise ApiError(409, "That time has just been taken. Please pick another.")
+    try:
+        start = bk.parse(req.start)
+    except ValueError as exc:
+        raise ApiError(422, "Please pick a time from the list.") from exc
+    sweep()
+    if start not in free_slots():
+        raise ApiError(409, "That time has just been taken. Please pick another.")
+    try:
+        b = app.state.bookings.add(
+            start=start, length_min=bk.Schedule().length, hold=BOOKING_HOLD,
+            amount_kobo=BOOKING_FEE_NGN * 100, mode=req.mode, office=req.office,
+            name=req.name, email=req.email, phone=req.phone, matter_type=req.matter_type,
+            description=req.description, page_url=req.page_url,
+            consent_text=BOOKING_CONSENT_TEXT)
+    except bk.SlotTaken as exc:
+        raise ApiError(409, "That time has just been taken. Please pick another.") from exc
+    _busy_cache["at"] = 0.0
+    place_hold(b)
+    alert(tasks, f"New booking, awaiting payment: {describe(b)}. {admin_url()}")
+    return visitor_view(b)
+
+
+@app.get("/bookings/{token}", dependencies=[Depends(booking_read_guard)])
+def get_booking(token: str, tasks: BackgroundTasks):
+    sweep()
+    return visitor_view(check_paystack(booking_by_token(token), tasks))
+
+
+@app.post("/bookings/{token}/pay", dependencies=[Depends(booking_step_guard)])
+def pay_booking(token: str):
+    sweep()
+    b = booking_by_token(token)
+    ps = app.state.paystack
+    if not ps:
+        raise ApiError(404, "Online payment is not available. Please pay by bank transfer.")
+    if b["status"] not in ("pending_payment", "transfer_pending"):
+        raise ApiError(409, status_message(b))
+    ref = bk.reference(b["id"])
+    try:
+        pay_ref, url = ps.start(
+            email=b["email"], amount_kobo=b["amount_kobo"], booking_ref=ref,
+            callback_url=f"{SITE_URL}/book/?b={b['token']}",
+            metadata={"booking_id": b["id"], "custom_fields": [
+                {"display_name": "Booking", "variable_name": "booking", "value": ref}]})
+    except PaymentError as exc:
+        print(f"[ERROR] Paystack: {exc}", file=sys.stderr)
+        raise ApiError(502, "We could not open the payment page. Please try again, "
+                            "or pay by bank transfer.") from exc
+    app.state.bookings.set(b["id"], payment_ref=pay_ref)
+    return {"authorization_url": url}
+
+
+@app.post("/bookings/{token}/transfer-sent", dependencies=[Depends(booking_step_guard)])
+def transfer_sent(token: str, tasks: BackgroundTasks):
+    sweep()
+    b = booking_by_token(token)
+    moved = app.state.bookings.move(
+        b["id"], ("pending_payment",), "transfer_pending", payment_method="transfer",
+        # Never hold past the consultation itself.
+        hold_expires_at=bk.iso(min(bk.now_utc() + TRANSFER_HOLD, bk.parse(b["start_at"]))))
+    if not moved:
+        if b["status"] == "transfer_pending":
+            return visitor_view(b)
+        raise ApiError(409, status_message(b))
+    place_hold(moved)
+    alert(tasks, f"Transfer to check: {describe(moved)} says they sent "
+                 f"{naira(moved['amount_kobo'])} with narration {bk.reference(moved['id'])}. "
+                 f"Mark it paid when it lands: {admin_url()}")
+    return visitor_view(moved)
+
+
+@app.post("/payments/paystack/webhook")
+async def paystack_webhook(request: Request, tasks: BackgroundTasks):
+    ps = app.state.paystack
+    raw = await request.body()
+    if not ps or not ps.signed(raw, request.headers.get("x-paystack-signature")):
+        raise ApiError(401, "Bad signature.")
+    event = json.loads(raw or b"{}")
+    data = event.get("data") or {}
+    if event.get("event") != "charge.success":
+        return {"ok": True}
+    booking_id = (data.get("metadata") or {}).get("booking_id")
+    b = app.state.bookings.get(int(booking_id)) if str(booking_id).isdigit() else None
+    if b and settled(data, b["amount_kobo"]):
+        mark_paid(b, "paystack", data.get("reference"), tasks)
+    return {"ok": True}
+
+
 # --- Admin -----------------------------------------------------------------
 @app.get("/admin/leads", dependencies=[Depends(require_admin)])
 def admin_leads(limit: int = 50):
@@ -540,6 +902,92 @@ def admin_delete_lead(lead_id: int):
     if not app.state.leads.delete(lead_id):
         raise ApiError(404, "No such lead.")
     return {"deleted": lead_id}
+
+
+def admin_view(b: dict) -> dict:
+    return {**b, "reference": bk.reference(b["id"]),
+            "start_label": bk.label(bk.parse(b["start_at"])),
+            "fee": naira(b["amount_kobo"]),
+            "contact": {"email": f"mailto:{b['email']}",
+                        "whatsapp": wa_link(f"Hello {b['name']}, this is {FIRM} about your "
+                                            f"consultation booking {bk.reference(b['id'])}.",
+                                            "".join(c for c in b["phone"] if c.isdigit()))}}
+
+
+def admin_booking(booking_id: int) -> dict:
+    b = app.state.bookings.get(booking_id)
+    if not b:
+        raise ApiError(404, "No such booking.")
+    return b
+
+
+@app.get("/admin/bookings", dependencies=[Depends(require_admin)])
+def admin_bookings(limit: int = 100):
+    sweep()
+    return {"bookings": [admin_view(b) for b in
+                         app.state.bookings.recent(min(max(limit, 1), 500))]}
+
+
+@app.post("/admin/bookings/{booking_id}/mark-paid", dependencies=[Depends(require_admin)])
+def admin_mark_paid(booking_id: int, tasks: BackgroundTasks):
+    """The firm has seen a direct transfer land in its account."""
+    b = admin_booking(booking_id)
+    if b["status"] not in ("pending_payment", "transfer_pending", "expired"):
+        raise ApiError(409, f"This booking is {b['status'].replace('_', ' ')}.")
+    return admin_view(mark_paid(b, b["payment_method"] or "transfer", None, tasks))
+
+
+@app.post("/admin/bookings/{booking_id}/confirm", dependencies=[Depends(require_admin)])
+def admin_confirm(booking_id: int):
+    """Conflict check passed: send the visitor the calendar invite (and Meet link)."""
+    b = admin_booking(booking_id)
+    if b["status"] != "paid":
+        raise ApiError(409, "Only paid bookings can be confirmed.")
+    cal = app.state.calendar
+    try:
+        event_id = b["calendar_event_id"] or cal.hold(b, hold_note("paid"))
+        meet = cal.confirm(event_id, b, OFFICES.get(b["office"] or "")) if event_id else None
+    except CalendarError as exc:
+        print(f"[ERROR] confirm {bk.reference(b['id'])}: {exc}", file=sys.stderr)
+        raise ApiError(502, "Google Calendar refused the invite. Nothing was sent; "
+                            "please try again.") from exc
+    moved = app.state.bookings.move(b["id"], ("paid",), "confirmed",
+                                    calendar_event_id=event_id, meet_url=meet)
+    if not moved:
+        raise ApiError(409, "This booking changed while you were confirming it.")
+    return admin_view(moved)
+
+
+@app.post("/admin/bookings/{booking_id}/cancel", dependencies=[Depends(require_admin)])
+def admin_cancel(booking_id: int, req: CancelRequest):
+    """Cancel (a conflict of interest, say). A confirmed visitor gets Google's
+    cancellation email; anyone else is contacted with the links in the response."""
+    b = admin_booking(booking_id)
+    cancellable = (*bk.ACTIVE, "paid_slot_taken")
+    if b["status"] not in cancellable:
+        raise ApiError(409, f"This booking is {b['status'].replace('_', ' ')}.")
+    if b["calendar_event_id"]:
+        try:
+            app.state.calendar.delete(b["calendar_event_id"], notify=b["status"] == "confirmed")
+        except CalendarError as exc:
+            print(f"[WARN] cancel {bk.reference(b['id'])}: {exc}", file=sys.stderr)
+    moved = app.state.bookings.move(b["id"], cancellable, "cancelled",
+                                    calendar_event_id=None, cancel_reason=req.reason.strip() or None)
+    _busy_cache["at"] = 0.0
+    return admin_view(moved or admin_booking(booking_id))
+
+
+@app.delete("/admin/bookings/{booking_id}", dependencies=[Depends(require_admin)])
+def admin_delete_booking(booking_id: int):
+    b = admin_booking(booking_id)
+    if b["calendar_event_id"]:
+        try:
+            app.state.calendar.delete(b["calendar_event_id"], notify=b["status"] == "confirmed")
+        except CalendarError as exc:
+            print(f"[WARN] erase {bk.reference(b['id'])}: {exc}", file=sys.stderr)
+    app.state.bookings.delete(booking_id)
+    _busy_cache["at"] = 0.0
+    return {"deleted": booking_id}
 
 
 # --- Internal assistant (the firm's lawyers only) --------------------------

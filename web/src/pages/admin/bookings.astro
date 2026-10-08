@@ -1,0 +1,226 @@
+---
+// The firm's bookings page: mark transfers paid, confirm after the conflict
+// check (sends the Google Calendar invite), or cancel. The page holds nothing
+// secret; every action needs the admin key, which is kept for this tab only.
+import Layout from '../../layouts/Layout.astro';
+
+const apiBase = import.meta.env.PUBLIC_ASSISTANT_API ?? 'http://localhost:8000';
+---
+
+<Layout title="Bookings" internal>
+  <section class="border-b border-line bg-ink text-paper">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6 py-10">
+      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-brass">Staff only</p>
+      <h1 class="mt-3 text-3xl sm:text-4xl font-semibold">Consultation bookings</h1>
+      <p class="mt-3 text-paper/80 max-w-2xl leading-relaxed">Check transfers and conflicts, then confirm (the visitor gets the calendar invite) or cancel.</p>
+    </div>
+  </section>
+
+  <div id="kl-admin" data-api={apiBase} class="mx-auto max-w-5xl px-4 sm:px-6 py-10">
+    <form id="ad-login" class="max-w-sm space-y-4" hidden>
+      <div>
+        <label for="ad-key" class="block text-sm font-medium mb-1.5">Admin key</label>
+        <input id="ad-key" type="password" required autocomplete="current-password"
+          class="w-full rounded-sm border border-line bg-white px-3 py-2.5 text-base focus:outline-none focus:border-brass" />
+      </div>
+      <p id="ad-login-error" class="hidden text-sm text-red-700" role="alert"></p>
+      <button type="submit" class="rounded-sm bg-ink text-paper px-5 py-2.5 font-medium hover:bg-ink-soft">Sign in</button>
+    </form>
+
+    <section id="ad-main" hidden>
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-3">
+        <div class="flex gap-2 text-sm" role="tablist" aria-label="Filter">
+          <button type="button" data-filter="action" class="rounded-full border border-line px-3 py-1 aria-selected:bg-ink aria-selected:text-paper">Needs action</button>
+          <button type="button" data-filter="upcoming" class="rounded-full border border-line px-3 py-1 aria-selected:bg-ink aria-selected:text-paper">Upcoming</button>
+          <button type="button" data-filter="all" class="rounded-full border border-line px-3 py-1 aria-selected:bg-ink aria-selected:text-paper">All</button>
+        </div>
+        <div class="flex gap-4 text-sm">
+          <button id="ad-refresh" type="button" class="text-muted hover:text-ink underline-offset-4 hover:underline">Refresh</button>
+          <button id="ad-logout" type="button" class="text-muted hover:text-ink underline-offset-4 hover:underline">Sign out</button>
+        </div>
+      </div>
+      <p id="ad-error" class="hidden mt-4 rounded-sm border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert"></p>
+      <ul id="ad-list" class="mt-6 space-y-4"></ul>
+      <p id="ad-empty" class="hidden mt-6 text-muted">Nothing here.</p>
+    </section>
+  </div>
+</Layout>
+
+<script>
+  type Booking = {
+    id: number; reference: string; status: string; start_at: string; start_label: string;
+    mode: string; office: string | null; name: string; email: string; phone: string;
+    matter_type: string; description: string; fee: string; payment_method: string | null;
+    payment_ref: string | null; hold_expires_at: string | null; meet_url: string | null;
+    cancel_reason: string | null; contact: { email: string; whatsapp: string };
+  };
+
+  const STATUS: Record<string, [string, string]> = {
+    pending_payment: ['Awaiting payment', 'bg-line text-ink'],
+    transfer_pending: ['Transfer to check', 'bg-amber-100 text-amber-900'],
+    paid: ['Paid: conflict check', 'bg-amber-100 text-amber-900'],
+    paid_slot_taken: ['Paid, slot taken', 'bg-red-100 text-red-900'],
+    confirmed: ['Confirmed', 'bg-emerald-100 text-emerald-900'],
+    cancelled: ['Cancelled', 'bg-line text-muted'],
+    expired: ['Expired', 'bg-line text-muted'],
+  };
+  const NEEDS_ACTION = ['transfer_pending', 'paid', 'paid_slot_taken'];
+  const ACTIVE = ['pending_payment', 'transfer_pending', 'paid', 'confirmed', 'paid_slot_taken'];
+
+  const API = document.getElementById('kl-admin')!.dataset.api!;
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const KEY = 'kl-admin-key';
+  let filter = 'action';
+  let bookings: Booking[] = [];
+
+  function getKey() { try { return sessionStorage.getItem(KEY) ?? ''; } catch { return ''; } }
+  function setKey(v: string | null) {
+    try { v ? sessionStorage.setItem(KEY, v) : sessionStorage.removeItem(KEY); } catch { /* private mode */ }
+  }
+
+  async function call<T>(path: string, init?: RequestInit): Promise<T> {
+    const resp = await fetch(`${API}${path}`, {
+      ...init, headers: { 'Content-Type': 'application/json', 'X-API-Key': getKey() },
+    });
+    const body = await resp.json().catch(() => ({}));
+    if (resp.status === 401) { signOut('That key was not accepted.'); throw new Error('signed out'); }
+    if (!resp.ok) throw new Error(body.error ?? 'Something went wrong.');
+    return body as T;
+  }
+
+  function showError(msg = '') {
+    const el = $('ad-error');
+    el.textContent = msg;
+    el.classList.toggle('hidden', !msg);
+  }
+
+  function signOut(msg = '') {
+    setKey(null);
+    $('ad-main').hidden = true;
+    $('ad-login').hidden = false;
+    const el = $('ad-login-error');
+    el.textContent = msg;
+    el.classList.toggle('hidden', !msg);
+  }
+
+  async function load() {
+    showError();
+    bookings = (await call<{ bookings: Booking[] }>('/admin/bookings?limit=300')).bookings;
+    $('ad-login').hidden = true;
+    $('ad-main').hidden = false;
+    draw();
+  }
+
+  function el(tag: string, cls = '', text = '') {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text) e.textContent = text;
+    return e;
+  }
+
+  function button(label: string, cls: string, onClick: (btn: HTMLButtonElement) => void) {
+    const b = el('button', `rounded-sm px-4 py-2 text-sm font-medium disabled:opacity-50 ${cls}`, label) as HTMLButtonElement;
+    b.type = 'button';
+    b.addEventListener('click', () => onClick(b));
+    return b;
+  }
+
+  async function act(b: Booking, action: string, btn: HTMLButtonElement, body?: object) {
+    btn.disabled = true;
+    showError();
+    try {
+      const updated = await call<Booking>(`/admin/bookings/${b.id}/${action}`, {
+        method: 'POST', body: body ? JSON.stringify(body) : undefined });
+      bookings = bookings.map((x) => (x.id === updated.id ? updated : x));
+      draw();
+    } catch (ex) {
+      if ((ex as Error).message !== 'signed out') showError(`${b.reference}: ${(ex as Error).message}`);
+      btn.disabled = false;
+    }
+  }
+
+  function card(b: Booking) {
+    const li = el('li', 'rounded-sm border border-line bg-white p-5');
+    const top = el('div', 'flex flex-wrap items-start justify-between gap-3');
+    const left = el('div');
+    left.append(el('p', 'text-xs font-semibold uppercase tracking-wider text-brass-deep', b.reference));
+    left.append(el('p', 'mt-1 font-serif text-xl font-semibold', b.start_label));
+    left.append(el('p', 'text-sm text-muted',
+      `${b.mode === 'virtual' ? 'Video call' : `In person, ${b.office}`} · ${b.matter_type.replace(/-/g, ' ')} · ${b.fee}`));
+    const [label, tone] = STATUS[b.status] ?? [b.status, 'bg-line'];
+    top.append(left, el('span', `rounded-full px-3 py-1 text-xs font-medium ${tone}`, label));
+    li.append(top);
+
+    const who = el('div', 'mt-4 grid gap-1 text-sm');
+    who.append(el('p', 'font-medium', b.name));
+    const links = el('p', 'flex flex-wrap gap-x-4');
+    const mail = el('a', 'underline underline-offset-2', b.email) as HTMLAnchorElement;
+    mail.href = b.contact.email;
+    const wa = el('a', 'underline underline-offset-2', `${b.phone} (WhatsApp)`) as HTMLAnchorElement;
+    wa.href = b.contact.whatsapp; wa.target = '_blank'; wa.rel = 'noopener';
+    links.append(mail, wa);
+    who.append(links);
+    who.append(el('p', 'mt-2 whitespace-pre-line text-ink-soft', b.description));
+    if (b.payment_method) who.append(el('p', 'mt-2 text-xs text-muted', `Payment: ${b.payment_method}${b.payment_ref ? ` (${b.payment_ref})` : ''}`));
+    if (b.meet_url) {
+      const m = el('a', 'text-xs underline', b.meet_url) as HTMLAnchorElement;
+      m.href = b.meet_url; m.target = '_blank'; m.rel = 'noopener';
+      who.append(m);
+    }
+    if (b.cancel_reason) who.append(el('p', 'text-xs text-muted', `Cancelled: ${b.cancel_reason}`));
+    li.append(who);
+
+    const actions = el('div', 'mt-4 flex flex-wrap items-center gap-3');
+    if (['pending_payment', 'transfer_pending', 'expired'].includes(b.status)) {
+      actions.append(button('Mark paid (transfer received)', 'border border-ink hover:bg-ink hover:text-paper',
+        (btn) => act(b, 'mark-paid', btn)));
+    }
+    if (b.status === 'paid') {
+      actions.append(button('Conflict check clear: confirm and send invite', 'bg-ink text-paper hover:bg-ink-soft',
+        (btn) => act(b, 'confirm', btn)));
+    }
+    if (ACTIVE.includes(b.status)) {
+      const reason = el('input', 'min-w-0 flex-1 rounded-sm border border-line px-3 py-2 text-sm') as HTMLInputElement;
+      reason.placeholder = 'Reason (e.g. conflict of interest)';
+      reason.maxLength = 300;
+      reason.setAttribute('aria-label', `Cancellation reason for ${b.reference}`);
+      const wrap = el('div', 'flex w-full sm:w-auto sm:flex-1 gap-2');
+      wrap.append(reason, button('Cancel', 'text-red-800 border border-red-200 hover:bg-red-50',
+        (btn) => act(b, 'cancel', btn, { reason: reason.value })));
+      actions.append(wrap);
+    }
+    if (['paid', 'paid_slot_taken', 'confirmed'].includes(b.status)) {
+      actions.append(el('p', 'w-full text-xs text-muted',
+        b.status === 'confirmed' ? 'Cancelling emails the visitor a calendar cancellation. Refund them separately.'
+          : 'Cancelling sends nothing automatically: tell the visitor and refund them separately.'));
+    }
+    if (actions.childElementCount) li.append(actions);
+    return li;
+  }
+
+  function draw() {
+    document.querySelectorAll('[data-filter]').forEach((b) =>
+      b.setAttribute('aria-selected', String((b as HTMLElement).dataset.filter === filter)));
+    const now = new Date().toISOString();
+    const shown = bookings
+      .filter((b) => filter === 'all'
+        || (filter === 'action' && NEEDS_ACTION.includes(b.status))
+        || (filter === 'upcoming' && ACTIVE.includes(b.status) && b.start_at >= now))
+      .sort((a, b) => (filter === 'all' ? b.start_at.localeCompare(a.start_at) : a.start_at.localeCompare(b.start_at)));
+    $('ad-list').replaceChildren(...shown.map(card));
+    $('ad-empty').classList.toggle('hidden', shown.length > 0);
+  }
+
+  document.querySelectorAll('[data-filter]').forEach((b) =>
+    b.addEventListener('click', () => { filter = (b as HTMLElement).dataset.filter!; draw(); }));
+  $('ad-refresh').addEventListener('click', () => load().catch((ex) => showError((ex as Error).message)));
+  $('ad-logout').addEventListener('click', () => signOut());
+  $('ad-login').addEventListener('submit', (e) => {
+    e.preventDefault();
+    setKey($<HTMLInputElement>('ad-key').value.trim());
+    load().catch((ex) => { if ((ex as Error).message !== 'signed out') signOut((ex as Error).message); });
+  });
+
+  if (getKey()) load().catch((ex) => { if ((ex as Error).message !== 'signed out') showError((ex as Error).message); });
+  else signOut();
+</script>

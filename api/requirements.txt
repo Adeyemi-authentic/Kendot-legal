@@ -14,3 +14,5 @@ psycopg[binary]==3.3.4
 pgvector==0.4.2
 # scripts/sync_content.py (reads the site's Markdown frontmatter)
 pyyaml==6.0.3
+# Google Calendar for consultation bookings (service account or OAuth refresh token)
+google-auth==2.40.3

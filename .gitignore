@@ -9,6 +9,7 @@ __pycache__/
 api/rag/index_data/
 eval/cache.json
 api/rag/leads.sqlite
+api/rag/bookings.sqlite
 
 # Node / Astro
 node_modules/

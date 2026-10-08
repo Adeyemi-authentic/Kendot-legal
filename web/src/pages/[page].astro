@@ -24,9 +24,16 @@ const isContact = entry.id === 'contact';
     <aside class="space-y-6">
       {isContact && (
         <div class="rounded-sm bg-ink text-paper p-6">
+          <p class="font-serif text-xl">Book a consultation</p>
+          <p class="mt-2 text-sm text-paper/75 leading-relaxed">Pick a time online, in person or by video call, and pay the fee securely.</p>
+          <a href="/book/" class="mt-5 inline-block rounded-sm bg-brass text-ink px-5 py-2.5 text-sm font-medium hover:bg-paper transition-colors">Choose a time</a>
+        </div>
+      )}
+      {isContact && (
+        <div class="rounded-sm border border-line bg-white p-6">
           <p class="font-serif text-xl">Send an enquiry online</p>
-          <p class="mt-2 text-sm text-paper/75 leading-relaxed">Tell us briefly what you need. A lawyer from the right team replies within one working day.</p>
-          <button type="button" data-open-assistant="enquiry" class="mt-5 rounded-sm bg-brass text-ink px-5 py-2.5 text-sm font-medium hover:bg-paper transition-colors">Start an enquiry</button>
+          <p class="mt-2 text-sm text-muted leading-relaxed">Tell us briefly what you need. A lawyer from the right team replies within one working day.</p>
+          <button type="button" data-open-assistant="enquiry" class="mt-5 rounded-sm border border-ink px-5 py-2.5 text-sm font-medium hover:bg-ink hover:text-paper transition-colors">Start an enquiry</button>
         </div>
       )}
       {isContact ? (
@@ -41,7 +48,7 @@ const isContact = entry.id === 'contact';
         <div class="rounded-sm bg-ink text-paper p-6">
           <p class="font-serif text-xl">Speak to a lawyer</p>
           <p class="mt-2 text-sm text-paper/75 leading-relaxed">Consultations last up to 45 minutes, in person or by video call.</p>
-          <a href="/contact/" class="mt-5 inline-block rounded-sm bg-brass text-ink px-5 py-2.5 text-sm font-medium hover:bg-paper transition-colors">Contact us</a>
+          <a href="/book/" class="mt-5 inline-block rounded-sm bg-brass text-ink px-5 py-2.5 text-sm font-medium hover:bg-paper transition-colors">Book a consultation</a>
         </div>
       )}
     </aside>

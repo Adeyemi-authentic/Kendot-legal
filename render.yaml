@@ -41,3 +41,30 @@ services:
         generateValue: true
       - key: INTERNAL_TABLE
         value: kendot_internal_chunks
+      # Consultation bookings
+      - key: SITE_URL            # the Vercel site URL (Paystack returns visitors here)
+        sync: false
+      - key: BOOKINGS_TABLE
+        value: kendot_bookings
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: GOOGLE_CALENDAR_ID
+        sync: false
+      - key: GOOGLE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: GOOGLE_CALENDAR_IMPERSONATE
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_ID
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_OAUTH_REFRESH_TOKEN
+        sync: false
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: FIRM_ALERT_NUMBERS
+        sync: false
+      - key: WHATSAPP_TEMPLATE
+        sync: false

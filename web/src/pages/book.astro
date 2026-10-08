@@ -1,0 +1,360 @@
+---
+// Book a consultation: pick a slot, pay, and the firm confirms after a conflict
+// check (the Google Calendar invite goes out then). The API holds all the rules;
+// this page draws the form and shows the booking's status. A booking's private
+// link is /book/?b=<token>, which is also where Paystack sends the visitor back.
+import { getCollection } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import { SITE } from '../site';
+
+const practice = (await getCollection('practice')).sort((a, b) => a.data.order - b.data.order);
+const matters = [...practice.map((p) => ({ id: p.id, label: p.data.title })), { id: 'other', label: 'Something else' }];
+const apiBase = import.meta.env.PUBLIC_ASSISTANT_API ?? 'http://localhost:8000';
+const field = 'w-full rounded-sm border border-line bg-white px-3 py-2.5 text-base focus:outline-none focus:border-brass';
+---
+
+<Layout title="Book a consultation" description={`Book a consultation with ${SITE.name}, in person in Lagos or Abuja, or by video call.`}>
+  <PageHeader eyebrow={SITE.name} title="Book a consultation"
+    summary="Up to 45 minutes with a lawyer, at our Lagos or Abuja office or by video call. Pick a time, pay the consultation fee, and we confirm after a quick conflict check." />
+
+  <div id="kl-book" data-api={apiBase} class="mx-auto max-w-6xl px-4 sm:px-6 py-12 grid gap-12 lg:grid-cols-[1fr_320px]">
+    <div class="min-w-0">
+      <p id="bk-loading" class="text-muted">Loading available times…</p>
+      <p id="bk-fatal" class="hidden rounded-sm border border-red-200 bg-red-50 p-4 text-red-800" role="alert"></p>
+
+      <!-- Step 1: details and a time -->
+      <form id="bk-form" class="space-y-8" novalidate hidden>
+        <fieldset class="space-y-4">
+          <legend class="font-serif text-2xl font-semibold mb-2">1. Your details</legend>
+          <div>
+            <label class="block text-sm font-medium mb-1.5" for="bk-name">Full name</label>
+            <input id="bk-name" name="name" required maxlength="100" autocomplete="name" class={field} />
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="block text-sm font-medium mb-1.5" for="bk-email">Email</label>
+              <input id="bk-email" name="email" type="email" required maxlength="200" autocomplete="email" class={field} />
+              <p class="mt-1 text-xs text-muted">The calendar invite is sent here.</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1.5" for="bk-phone">Phone (WhatsApp if you have it)</label>
+              <input id="bk-phone" name="phone" type="tel" required maxlength="30" autocomplete="tel" placeholder="+234" class={field} />
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5" for="bk-matter">Type of matter</label>
+            <select id="bk-matter" name="matter_type" required class={field}>
+              <option value="" selected disabled>Choose one</option>
+              {matters.map((m) => <option value={m.id}>{m.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5" for="bk-desc">What would you like to discuss?</label>
+            <textarea id="bk-desc" name="description" rows="4" required minlength="10" maxlength="2000" class={field}></textarea>
+            <p class="mt-1 text-xs text-muted">A short summary is enough. Only the firm sees this; it is not put on the calendar.</p>
+          </div>
+        </fieldset>
+
+        <fieldset class="space-y-3">
+          <legend class="font-serif text-2xl font-semibold mb-2">2. How would you like to meet?</legend>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label class="flex gap-3 rounded-sm border border-line bg-white p-4 cursor-pointer has-[:checked]:border-ink has-[:checked]:ring-1 has-[:checked]:ring-ink">
+              <input type="radio" name="mode" value="virtual" required class="mt-1 accent-ink" checked />
+              <span><span class="block font-medium">Video call</span><span class="block text-sm text-muted">Google Meet. The link comes with your invite.</span></span>
+            </label>
+            <label class="flex gap-3 rounded-sm border border-line bg-white p-4 cursor-pointer has-[:checked]:border-ink has-[:checked]:ring-1 has-[:checked]:ring-ink">
+              <input type="radio" name="mode" value="in_person" class="mt-1 accent-ink" />
+              <span><span class="block font-medium">In person</span><span class="block text-sm text-muted">At our Lagos or Abuja office.</span></span>
+            </label>
+          </div>
+          <div id="bk-office-wrap" hidden>
+            <label class="block text-sm font-medium mb-1.5" for="bk-office">Office</label>
+            <select id="bk-office" name="office" class={field}></select>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend class="font-serif text-2xl font-semibold mb-1">3. Pick a time</legend>
+          <p class="text-sm text-muted mb-4">Times are in Nigerian time (WAT). Consultations last up to 45 minutes.</p>
+          <div id="bk-days" class="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1" role="tablist" aria-label="Day"></div>
+          <div id="bk-times" class="mt-3 grid grid-cols-3 sm:grid-cols-5 gap-2" role="radiogroup" aria-label="Time"></div>
+          <p id="bk-none" class="hidden text-muted">No times are free in the next two weeks. Please message us on WhatsApp.</p>
+        </fieldset>
+
+        <div class="hidden" aria-hidden="true">
+          <label>Website <input name="website" tabindex="-1" autocomplete="off" /></label>
+        </div>
+        <label class="flex items-start gap-3 text-sm leading-relaxed text-ink-soft">
+          <input name="consent" type="checkbox" required class="mt-1 size-4 shrink-0 accent-ink" />
+          <span id="bk-consent">I agree that {SITE.name} may use these details to arrange my consultation, including adding my name and email to the firm's Google Calendar invite, as described in the <a href="/privacy/" class="underline underline-offset-2">privacy notice</a>.</span>
+        </label>
+
+        <p id="bk-error" class="hidden text-sm text-red-700" role="alert"></p>
+        <button id="bk-submit" type="submit" class="rounded-sm bg-ink text-paper px-6 py-3 font-medium hover:bg-ink-soft disabled:opacity-50 transition-colors">Book this time</button>
+      </form>
+
+      <!-- Step 2: the booking, payment and status -->
+      <section id="bk-status" hidden aria-live="polite">
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-brass-deep">Reference <span id="st-ref"></span></p>
+        <h2 id="st-when" class="mt-2 font-serif text-3xl font-semibold"></h2>
+        <p id="st-where" class="mt-1 text-muted"></p>
+        <p id="st-message" class="mt-5 rounded-sm border-l-4 border-brass bg-brass-soft p-4 leading-relaxed"></p>
+        <p id="st-meet" class="mt-4" hidden><a class="font-medium underline underline-offset-4" target="_blank" rel="noopener">Join the Google Meet</a></p>
+
+        <div id="st-pay" class="mt-8 space-y-4" hidden>
+          <h3 class="font-serif text-xl font-semibold">Pay the <span data-fee></span> consultation fee</h3>
+          <div id="st-paystack" class="rounded-sm border border-line bg-white p-5" hidden>
+            <p class="font-medium">Pay online</p>
+            <p class="mt-1 text-sm text-muted">Card, bank transfer or USSD through Paystack. Confirmed instantly.</p>
+            <button id="st-paystack-btn" type="button" class="mt-4 rounded-sm bg-ink text-paper px-5 py-2.5 font-medium hover:bg-ink-soft disabled:opacity-50 transition-colors">Pay <span data-fee></span></button>
+          </div>
+          <div class="rounded-sm border border-line bg-white p-5">
+            <p class="font-medium">Pay by direct bank transfer</p>
+            <dl class="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+              <dt class="text-muted">Bank</dt><dd id="st-bank"></dd>
+              <dt class="text-muted">Account name</dt><dd id="st-acct-name"></dd>
+              <dt class="text-muted">Account number</dt><dd id="st-acct-no" class="font-mono"></dd>
+              <dt class="text-muted">Amount</dt><dd data-fee></dd>
+              <dt class="text-muted">Narration</dt><dd id="st-narration" class="font-mono font-semibold"></dd>
+            </dl>
+            <p class="mt-3 text-sm text-muted">Use the reference as the narration so we can match your payment.</p>
+            <button id="st-transfer-btn" type="button" class="mt-4 rounded-sm border border-ink px-5 py-2.5 font-medium hover:bg-ink hover:text-paper disabled:opacity-50 transition-colors">I've sent the transfer</button>
+          </div>
+        </div>
+        <p id="st-error" class="hidden mt-4 text-sm text-red-700" role="alert"></p>
+
+        <div class="mt-8 flex flex-wrap items-center gap-4">
+          <a id="st-wa" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-sm bg-[#1f7a4d] text-white px-5 py-2.5 font-medium hover:opacity-90">Message us on WhatsApp</a>
+          <a id="st-again" href="/book/" class="text-sm underline underline-offset-4" hidden>Book a new time</a>
+        </div>
+        <p class="mt-6 text-xs text-muted">Keep this page's link: it shows your booking's latest status.</p>
+      </section>
+    </div>
+
+    <aside class="space-y-6">
+      <div class="rounded-sm bg-ink text-paper p-6">
+        <p class="font-serif text-xl">How booking works</p>
+        <ol class="mt-3 space-y-2 text-sm text-paper/80 list-decimal list-inside leading-relaxed">
+          <li>Pick a time. We hold it for you while you pay.</li>
+          <li>Pay the <span data-fee>consultation</span> fee online or by bank transfer.</li>
+          <li>A lawyer runs a conflict check, then you get a calendar invite (with a Google Meet link for video calls).</li>
+        </ol>
+        <p class="mt-3 text-xs text-paper/60">If you instruct us afterwards, the fee is deducted from your first invoice. If we cannot act for you, we refund it.</p>
+      </div>
+      {SITE.offices.map((o) => (
+        <div class="rounded-sm border border-line bg-white p-6">
+          <p class="text-xs font-semibold uppercase tracking-wider text-brass-deep">{o.city}</p>
+          <p class="mt-2 leading-relaxed">{o.address}</p>
+          <p class="mt-2 text-sm text-muted">{SITE.hours}</p>
+        </div>
+      ))}
+    </aside>
+  </div>
+</Layout>
+
+<script>
+  type Slot = { start: string; label: string };
+  type Day = { date: string; label: string; slots: Slot[] };
+  type Bank = { name: string; account_name: string; account_number: string; narration?: string };
+  type Booking = {
+    reference: string; token: string; status: string; message: string; start_label: string;
+    mode: string; office: string | null; address: string | null; fee: string;
+    meet_url: string | null; can_pay: boolean; paystack: boolean; bank: Bank; whatsapp_url: string;
+  };
+
+  const root = document.getElementById('kl-book')!;
+  const API = root.dataset.api!;
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const form = $<HTMLFormElement>('bk-form');
+  const statusEl = $('bk-status');
+  let chosen: string | null = null;
+
+  async function call<T>(path: string, init?: RequestInit): Promise<T> {
+    const resp = await fetch(`${API}${path}`, {
+      ...init, headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+    });
+    const body = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(body.error ?? 'Something went wrong. Please try again.');
+    return body as T;
+  }
+
+  function fatal(msg: string) {
+    $('bk-loading').hidden = true;
+    const el = $('bk-fatal');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+
+  function setFee(fee: string) {
+    document.querySelectorAll<HTMLElement>('[data-fee]').forEach((el) => (el.textContent = fee));
+  }
+
+  // --- Step 1 ---------------------------------------------------------------
+  function drawDays(days: Day[]) {
+    const tabs = $('bk-days');
+    tabs.replaceChildren();
+    if (!days.length) { $('bk-none').classList.remove('hidden'); return; }
+    days.forEach((d, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('role', 'tab');
+      b.className = 'shrink-0 rounded-sm border border-line bg-white px-3 py-2 text-sm text-left aria-selected:border-ink aria-selected:bg-ink aria-selected:text-paper';
+      const [weekday, ...rest] = d.label.split(' ');
+      b.innerHTML = `<span class="block text-xs opacity-75"></span><span class="block font-medium"></span>`;
+      (b.children[0] as HTMLElement).textContent = weekday.slice(0, 3);
+      (b.children[1] as HTMLElement).textContent = rest.join(' ').replace(/(\w{3})\w*$/, '$1');
+      b.addEventListener('click', () => pickDay(days, i));
+      tabs.append(b);
+    });
+    pickDay(days, 0);
+  }
+
+  function pickDay(days: Day[], i: number) {
+    [...$('bk-days').children].forEach((el, j) => el.setAttribute('aria-selected', String(i === j)));
+    const times = $('bk-times');
+    times.replaceChildren();
+    for (const s of days[i].slots) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', String(s.start === chosen));
+      b.setAttribute('aria-label', `${days[i].label}, ${s.label}`);
+      b.className = 'rounded-sm border border-line bg-white py-2.5 text-sm font-medium hover:border-brass aria-checked:border-ink aria-checked:bg-ink aria-checked:text-paper';
+      b.textContent = s.label;
+      b.addEventListener('click', () => {
+        chosen = s.start;
+        times.querySelectorAll('[role=radio]').forEach((el) => el.setAttribute('aria-checked', String(el === b)));
+      });
+      times.append(b);
+    }
+  }
+
+  async function loadSlots() {
+    const { days } = await call<{ days: Day[] }>('/booking/slots');
+    drawDays(days);
+  }
+
+  async function startForm() {
+    const opts = await call<{ fee: string; consent_text: string; offices: { city: string; address: string }[] }>('/booking/options');
+    setFee(opts.fee);
+    const office = $<HTMLSelectElement>('bk-office');
+    office.replaceChildren(...opts.offices.map((o) => new Option(`${o.city}: ${o.address}`, o.city)));
+    await loadSlots();
+    $('bk-loading').hidden = true;
+    form.hidden = false;
+  }
+
+  form.addEventListener('change', (e) => {
+    if ((e.target as HTMLInputElement).name === 'mode') {
+      $('bk-office-wrap').hidden = (form.elements.namedItem('mode') as RadioNodeList).value !== 'in_person';
+    }
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const err = $('bk-error');
+    err.classList.add('hidden');
+    if (!form.reportValidity()) return;
+    if (!chosen) { err.textContent = 'Please pick a time.'; err.classList.remove('hidden'); return; }
+    const data = new FormData(form);
+    const body = {
+      name: data.get('name'), email: data.get('email'), phone: data.get('phone'),
+      matter_type: data.get('matter_type'), description: data.get('description'),
+      mode: data.get('mode'), office: data.get('mode') === 'in_person' ? data.get('office') : null,
+      start: chosen, consent: data.get('consent') === 'on', website: data.get('website') || null,
+      page_url: location.pathname,
+    };
+    const btn = $<HTMLButtonElement>('bk-submit');
+    btn.disabled = true;
+    try {
+      const b = await call<Booking>('/bookings', { method: 'POST', body: JSON.stringify(body) });
+      history.replaceState(null, '', `/book/?b=${encodeURIComponent(b.token)}`);
+      showBooking(b);
+    } catch (ex) {
+      err.textContent = (ex as Error).message;
+      err.classList.remove('hidden');
+      chosen = null;
+      loadSlots().catch(() => {});      // the time may have gone: refresh the list
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // --- Step 2 ---------------------------------------------------------------
+  let current: Booking | null = null;
+
+  function showBooking(b: Booking) {
+    current = b;
+    form.hidden = true;
+    $('bk-loading').hidden = true;
+    statusEl.hidden = false;
+    setFee(b.fee);
+    $('st-ref').textContent = b.reference;
+    $('st-when').textContent = b.start_label;
+    $('st-where').textContent = b.mode === 'virtual' ? 'Video call (Google Meet)' : `In person: ${b.address}`;
+    $('st-message').textContent = b.message;
+    const meet = $('st-meet');
+    meet.hidden = !b.meet_url;
+    if (b.meet_url) meet.querySelector('a')!.href = b.meet_url;
+    $('st-pay').hidden = !b.can_pay;
+    $('st-paystack').hidden = !b.paystack;
+    $('st-bank').textContent = b.bank.name;
+    $('st-acct-name').textContent = b.bank.account_name;
+    $('st-acct-no').textContent = b.bank.account_number;
+    $('st-narration').textContent = b.reference;
+    const sent = $<HTMLButtonElement>('st-transfer-btn');
+    sent.disabled = b.status === 'transfer_pending';
+    sent.textContent = b.status === 'transfer_pending' ? 'Transfer reported, we are checking' : "I've sent the transfer";
+    $<HTMLAnchorElement>('st-wa').href = b.whatsapp_url;
+    $('st-again').hidden = !['expired', 'cancelled'].includes(b.status);
+    statusEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function stepError(msg: string) {
+    const el = $('st-error');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+
+  $('st-paystack-btn').addEventListener('click', async (e) => {
+    const btn = e.currentTarget as HTMLButtonElement;
+    btn.disabled = true;
+    try {
+      const { authorization_url } = await call<{ authorization_url: string }>(
+        `/bookings/${encodeURIComponent(current!.token)}/pay`, { method: 'POST' });
+      location.href = authorization_url;
+    } catch (ex) {
+      stepError((ex as Error).message);
+      btn.disabled = false;
+    }
+  });
+
+  $('st-transfer-btn').addEventListener('click', async (e) => {
+    const btn = e.currentTarget as HTMLButtonElement;
+    btn.disabled = true;
+    try {
+      showBooking(await call<Booking>(`/bookings/${encodeURIComponent(current!.token)}/transfer-sent`, { method: 'POST' }));
+    } catch (ex) {
+      stepError((ex as Error).message);
+      btn.disabled = false;
+    }
+  });
+
+  // Back from Paystack: the webhook may land a few seconds after the visitor does.
+  async function loadBooking(token: string, tries = 1) {
+    const b = await call<Booking>(`/bookings/${encodeURIComponent(token)}`);
+    showBooking(b);
+    if (b.status === 'pending_payment' && tries > 1) {
+      setTimeout(() => loadBooking(token, tries - 1).catch(() => {}), 3000);
+    }
+  }
+
+  const params = new URLSearchParams(location.search);
+  const token = params.get('b');
+  if (token) {
+    loadBooking(token, params.has('reference') ? 5 : 1).catch((ex) => fatal((ex as Error).message));
+  } else {
+    startForm().catch((ex) => fatal((ex as Error).message));
+  }
+</script>

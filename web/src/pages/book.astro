@@ -164,7 +164,7 @@ const field = 'w-full rounded-sm border border-line bg-white px-3 py-2.5 text-ba
   };
 
   const root = document.getElementById('kl-book')!;
-  const API = root.dataset.api!;
+  const API = (root.dataset.api || '').replace(/\/$/, '');
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
   const form = $<HTMLFormElement>('bk-form');
   const statusEl = $('bk-status');

@@ -67,7 +67,7 @@ const apiBase = import.meta.env.PUBLIC_ASSISTANT_API ?? 'http://localhost:8000';
   const NEEDS_ACTION = ['transfer_pending', 'paid', 'paid_slot_taken'];
   const ACTIVE = ['pending_payment', 'transfer_pending', 'paid', 'confirmed', 'paid_slot_taken'];
 
-  const API = document.getElementById('kl-admin')!.dataset.api!;
+  const API = (document.getElementById('kl-admin')!.dataset.api || '').replace(/\/$/, '');
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
   const KEY = 'kl-admin-key';
   let filter = 'action';

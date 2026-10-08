@@ -5,12 +5,15 @@
 
 **Live site:** https://kendot-legal.vercel.app · **API health:** https://kendot-assistant.onrender.com/health
 
-A complete website for a mid-sized Lagos/Abuja commercial law firm, with two AI assistants:
+A complete website for a mid-sized Lagos/Abuja commercial law firm, with online consultation booking and two AI
+assistants:
 
 - a **public assistant** on every page that answers visitors' questions from the site's own content, cites
   the page each fact came from, refuses to give legal advice and hands the visitor to a lawyer instead;
 - a **private assistant** for the firm's lawyers (`/internal`, password-protected) that answers from the firm's
-  precedents, templates, procedures and matter list, and is kept provably separate from the public one.
+  precedents, templates, procedures and matter list, and is kept provably separate from the public one;
+- **consultation booking** (`/book/`): the visitor picks a free slot from the firm's Google Calendar, pays the fee,
+  and the firm confirms after a conflict check, which sends a calendar invite with a Google Meet link for video calls.
 
 ![Home page on a laptop](docs/screenshots/home-desktop.png)
 
@@ -42,6 +45,26 @@ leaks internal documents to the public. This build is designed around those thre
 The enquiry form (name, contact, matter type, description, NDPA 2023 consent) saves to the database and gives the
 visitor a WhatsApp link with their reference number.
 
+## Booking a consultation
+
+"Book a consultation" opens `/book/`. The visitor gives name, email, phone, matter type and a short description,
+chooses a video call or an in-person meeting (Lagos or Abuja), and picks a free time. Free times come from the
+firm's Google Calendar: office hours in WAT, 45-minute consultations with a 15-minute buffer, at least 24 hours ahead.
+
+1. **Booked, subject to confirmation.** The slot is held while the visitor pays, and a private HOLD appears on the
+   firm's calendar showing only the reference and matter type. The visitor's description never goes on the calendar.
+2. **Payment before confirmation.** Direct bank transfer (the reference is the narration; the firm marks it paid), or
+   Paystack (card, transfer, USSD), which is built but switched off in the demo. Unpaid holds expire and free the slot.
+3. **Conflict check, then confirm or cancel.** On a staff page (`/admin/bookings/`) the firm confirms: the visitor
+   is added as a guest, so Google emails the invite, with a Meet link for video calls or the office address. Or the
+   firm cancels, for example over a conflict of interest.
+
+The firm gets a WhatsApp alert at each step through the Meta WhatsApp Cloud API. That is set up per client with the
+firm's own WhatsApp Business number; in this demo the alerts go to the server log. A database index stops two people
+booking the same slot, even at the same moment.
+
+![The booking page](docs/screenshots/book-desktop.png)
+
 ## How it works
 
 ```
@@ -53,6 +76,9 @@ visitor a WhatsApp link with their reference number.
                                                       kendot_chunks           (public)
                                                       kendot_internal_chunks  (internal, separate table)
                                                       kendot_leads            (enquiries)
+                                                      kendot_bookings         (consultations)
+                                      FastAPI ──▶ Google Calendar (free/busy, holds, invites + Meet)
+                                              ──▶ WhatsApp Cloud API (alerts to the firm), Paystack (optional)
 ```
 
 - **One source of truth.** The website's Markdown *is* the assistant's knowledge base. Publish an article, re-sync,
@@ -104,13 +130,16 @@ so the final numbers flatter the system somewhat.
 | Database (Neon) | Free | Free at this size |
 | AI per question | ~$0.003 | ~$0.003; 1,000 questions ≈ $3 |
 | Voyage embeddings | Free tier (about 3 requests a minute) | Add a payment method so it isn't rate-limited |
+| Google Calendar | Free (personal account) | Included in the firm's Google Workspace |
+| WhatsApp alerts | Not set up (alerts go to the log) | Meta's per-message charge for business-initiated messages; small at a few alerts a day |
+| Paystack | Off | Paystack's per-transaction fee, paid by the firm |
 
 ## Run it locally
 
 ```bash
 # API (Python 3.14)
 cd api && python -m venv .venv && .venv/bin/pip install -r requirements.txt -r requirements-dev.txt
-cp .env.example .env            # add ANTHROPIC_API_KEY and VOYAGE_API_KEY
+cp .env.example .env            # add ANTHROPIC_API_KEY and VOYAGE_API_KEY (booking settings are optional)
 cd rag && ../.venv/bin/python engine.py build && ../.venv/bin/python internal.py build
 cd ../app && INTERNAL_PASSWORD=choose-one ../.venv/bin/python -m uvicorn app:app --port 8000
 
@@ -118,7 +147,7 @@ cd ../app && INTERNAL_PASSWORD=choose-one ../.venv/bin/python -m uvicorn app:app
 cd web && npm install && npm run dev      # http://localhost:4321, /internal for the staff page
 
 # Checks
-cd api && .venv/bin/python -m pytest -q tests/          # separation tests
+cd api && .venv/bin/python -m pytest -q tests/          # separation + booking tests
 python scripts/validate_golden.py && python api/rag/evaluate.py   # evaluation (API stopped)
 ```
 
@@ -126,15 +155,17 @@ python scripts/validate_golden.py && python api/rag/evaluate.py   # evaluation (
 
 | Path | What it holds |
 |---|---|
-| `web/` | Astro + Tailwind site. Firm settings in `src/site.ts`, content in `src/content/`, widget in `src/components/ChatWidget.astro`, staff page in `src/pages/internal.astro` |
-| `api/app/app.py` | FastAPI service: `/chat`, `/chat/stream`, `/intake`, `/internal/*`, `/admin/leads` |
+| `web/` | Astro + Tailwind site. Firm settings in `src/site.ts`, content in `src/content/`, widget in `src/components/ChatWidget.astro`, staff pages in `src/pages/internal.astro` and `src/pages/admin/bookings.astro`, booking in `src/pages/book.astro` |
+| `api/app/app.py` | FastAPI service: `/chat`, `/chat/stream`, `/intake`, `/booking/*`, `/bookings/*`, `/internal/*`, `/admin/*` |
+| `api/app/` booking modules | `bookings.py` (store, slot rules, status flow), `gcal.py` (Google Calendar), `payments.py` (Paystack), `whatsapp.py` (alerts) |
 | `api/rag/` | Retrieval and generation: `engine.py` (local), `pg_engine.py` (pgvector), `chat.py` (public prompt), `internal.py` (internal assistant) |
-| `api/tests/` | Separation tests for the internal assistant |
-| `scripts/` | `sync_content.py` (site → knowledge base), `validate_golden.py` |
+| `api/tests/` | Separation tests for the internal assistant; booking flow tests with fake calendar, Paystack and WhatsApp |
+| `scripts/` | `sync_content.py` (site → knowledge base), `validate_golden.py`, `google_oauth.py` (one-time calendar sign-in for a personal Google account) |
 | `eval/` | Targets, golden set, every run's saved answers, results write-up |
 | `render.yaml` | Render blueprint for the API |
 
 ## Built with
 
-Astro 5, Tailwind, FastAPI, Anthropic Claude Haiku 4.5, Voyage AI, Postgres + pgvector (Neon), Docker, Vercel, Render.
+Astro 5, Tailwind, FastAPI, Anthropic Claude Haiku 4.5, Voyage AI, Postgres + pgvector (Neon), Google Calendar API,
+WhatsApp Cloud API, Paystack, Docker, Vercel, Render.
 The retrieval core is reused from [naija-law-rag](https://github.com/Adeyemi-authentic/naija-law-rag).
